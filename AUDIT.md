@@ -38,6 +38,7 @@ The review was static because the audit ran on Windows without Xcode. A clean ma
 - Added an MIT license, contribution guide, security policy, code of conduct, validation script, issue templates, dependency updates, and automated public-release checks.
 - Documented the shipping source layout, configuration model, backend secrets, privacy boundaries, and release preflight.
 - Kept the Swift package lockfile so Mapbox dependency versions are reproducible.
+- Restored the standard Xcode workspace metadata so package resources and the shared scheme resolve through one build directory on clean machines and CI.
 
 ## Remaining priorities
 

@@ -7,6 +7,7 @@ import json
 import plistlib
 import re
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
@@ -19,6 +20,10 @@ REQUIRED_PATHS = [
     ROOT / "StravaVault" / "Info.plist",
     ROOT / "StravaVault" / "PrivacyInfo.xcprivacy",
     ROOT / "StravaVaultClean.xcodeproj" / "project.pbxproj",
+    ROOT
+    / "StravaVaultClean.xcodeproj"
+    / "project.xcworkspace"
+    / "contents.xcworkspacedata",
     ROOT / "supabase" / "functions" / "account-bootstrap" / "index.ts",
     ROOT / "supabase" / "functions" / "delete-account" / "index.ts",
 ]
@@ -131,6 +136,27 @@ def main() -> int:
             json.loads(json_path.read_text(encoding="utf-8"))
         except Exception as exc:
             fail(errors, f"invalid JSON {json_path.relative_to(ROOT)}: {exc}")
+
+    workspace_path = (
+        ROOT
+        / "StravaVaultClean.xcodeproj"
+        / "project.xcworkspace"
+        / "contents.xcworkspacedata"
+    )
+    if workspace_path.exists():
+        try:
+            workspace = ET.parse(workspace_path).getroot()
+            locations = {
+                element.attrib.get("location")
+                for element in workspace.findall("FileRef")
+            }
+            if "self:" not in locations:
+                fail(errors, "Xcode workspace does not reference the project itself")
+        except Exception as exc:
+            fail(
+                errors,
+                f"invalid Xcode workspace {workspace_path.relative_to(ROOT)}: {exc}",
+            )
 
     project_path = ROOT / "StravaVaultClean.xcodeproj" / "project.pbxproj"
     if project_path.exists():
