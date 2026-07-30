@@ -114,9 +114,10 @@ def main() -> int:
         if text is None or relative == Path("Scripts/validate_public_release.py"):
             continue
 
-        for label, pattern in SECRET_PATTERNS.items():
+        for pattern in SECRET_PATTERNS.values():
             if pattern.search(text):
-                fail(errors, f"{label} pattern found in {relative}")
+                fail(errors, f"credential pattern found in {relative}")
+                break
 
     for plist_path in [
         ROOT / "StravaVault" / "Info.plist",
