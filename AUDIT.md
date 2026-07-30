@@ -6,7 +6,14 @@ Audit date: 2026-07-30
 
 This review covered the shipping iOS target, local credential handling, Strava OAuth, Supabase account and sharing functions, database access controls, storage, privacy declarations, release configuration, tests, accessibility markers, dependency pinning, repository history, and open-source release hygiene.
 
-The review was static because the audit ran on Windows without Xcode. A clean macOS build, unit test run, UI test run, archive preflight, and live backend integration test remain required before an App Store release.
+The primary code review ran on Windows. GitHub Actions then completed a clean macOS build of the shared `StravaVault` scheme and extended CodeQL analysis of Swift, Actions, JavaScript/TypeScript, and Python. A unit test run, UI test run, Release archive preflight, and live backend integration test remain required before an App Store release.
+
+## Verification completed
+
+- The public-release validator, script syntax checks, Deno formatting and type checks, and full-history gitleaks scan pass.
+- GitHub's dependency review, Dependabot advisory scan, secret scanning, and push protection report no open alerts at audit completion.
+- The macOS workflow resolves the locked Swift packages and builds the iOS app through the shared scheme with signing disabled.
+- Extended CodeQL analysis passes for Swift, Actions, JavaScript/TypeScript, and Python with no open findings at audit completion.
 
 ## Release blockers fixed
 
@@ -39,16 +46,17 @@ The review was static because the audit ran on Windows without Xcode. A clean ma
 - Documented the shipping source layout, configuration model, backend secrets, privacy boundaries, and release preflight.
 - Kept the Swift package lockfile so Mapbox dependency versions are reproducible.
 - Restored the standard Xcode workspace metadata so package resources and the shared scheme resolve through one build directory on clean machines and CI.
+- Replaced CodeQL's target-based Swift autobuild with a pinned advanced workflow that performs a bounded manual scheme build before analysis.
 
 ## Remaining priorities
 
 ### P1 before the next production release
 
-- Run the complete Xcode build and test matrix on macOS, including a Release archive with no Strava client secret.
+- Run the complete unit and UI test matrix on macOS, including a Release archive with no Strava client secret.
 - Deploy the updated Supabase functions, including `account-bootstrap`, `account-lists`, `delete-account`, `shared-list`, `strava-auth-broker`, `submit-feedback`, and `sync-list`.
 - Add integration tests for account bootstrap, list visibility transitions, account deletion, storage cleanup, and expired sessions.
 - Add rate limiting and abuse monitoring for the public Strava broker, account bootstrap, feedback, and large sync requests.
-- Reconcile the target's inline Swift language version with the documented Swift 6 configuration after a clean compiler pass.
+- Decide and enforce one Swift language mode: several shipping and test target settings still override `Shared.xcconfig` 6.0 with Swift 5.0.
 
 ### P2 product and maintainability
 
