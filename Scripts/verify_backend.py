@@ -74,7 +74,9 @@ def request_json(
         status = error.code
         raw = error.read().decode()
     except urllib.error.URLError as error:
-        raise RuntimeError(f"{method} {url} failed: {error}") from error
+        raise RuntimeError(
+            f"{method} request failed ({type(error.reason).__name__})."
+        ) from error
 
     if not raw:
         return status, {}
@@ -82,7 +84,7 @@ def request_json(
     try:
         return status, json.loads(raw)
     except json.JSONDecodeError as error:
-        raise RuntimeError(f"{method} {url} returned non-JSON payload") from error
+        raise RuntimeError(f"{method} request returned a non-JSON payload.") from error
 
 
 def request_status(url: str, *, timeout: int = 30) -> int:
@@ -93,7 +95,9 @@ def request_status(url: str, *, timeout: int = 30) -> int:
     except urllib.error.HTTPError as error:
         return error.code
     except urllib.error.URLError as error:
-        raise RuntimeError(f"HEAD {url} failed: {error}") from error
+        raise RuntimeError(
+            f"HEAD request failed ({type(error.reason).__name__})."
+        ) from error
 
 
 def hostname_resolves(url: str) -> bool:
@@ -145,13 +149,13 @@ def main() -> int:
 
     if not hostname_resolves(supabase_url):
         failures.append(
-            f"Supabase host for {supabase_url} does not resolve in DNS. "
+            "The configured Supabase host does not resolve in DNS. "
             "Check that the Supabase project is active and update ROUTE_VAULT_SUPABASE_URL before installing or archiving the app."
         )
 
     if broker_base_url and not hostname_resolves(broker_base_url):
         failures.append(
-            f"Strava auth broker host for {broker_base_url} does not resolve in DNS. "
+            "The configured Strava auth broker host does not resolve in DNS. "
             "Check that the backend project is active and update ROUTE_VAULT_STRAVA_AUTH_BROKER_URL."
         )
 
@@ -197,41 +201,15 @@ def main() -> int:
         if exchange_status != 400:
             failures.append(f"Broker exchange invalid-code probe returned HTTP {exchange_status}, expected 400.")
 
-    athlete = {}
-    if access_token:
-        athlete_request = urllib.request.Request(
-            "https://www.strava.com/api/v3/athlete",
-            headers={"Authorization": f"Bearer {access_token}"},
-            method="GET",
-        )
-        try:
-            with urllib.request.urlopen(athlete_request, timeout=30) as response:
-                athlete = json.loads(response.read().decode())
-        except urllib.error.HTTPError as error:
-            failures.append(f"Strava athlete fetch failed with HTTP {error.code}.")
-        except urllib.error.URLError as error:
-            failures.append(f"Strava athlete fetch failed: {error}.")
-
     session_token = None
     first_share_token = None
-    if athlete and access_token:
+    if access_token:
         bootstrap_status, bootstrap_payload = request_json(
             f"{supabase_url}/functions/v1/account-bootstrap",
             method="POST",
             body={
                 "stravaSession": {
                     "accessToken": access_token,
-                    "refreshToken": refresh_payload.get("refresh_token"),
-                    "expiresAt": str(refresh_payload.get("expires_at")),
-                    "acceptedScopes": ["read"],
-                    "athlete": {
-                        "id": athlete.get("id"),
-                        "username": athlete.get("username"),
-                        "firstName": athlete.get("firstname"),
-                        "lastName": athlete.get("lastname"),
-                        "profileMedium": athlete.get("profile_medium"),
-                        "profile": athlete.get("profile"),
-                    },
                 },
                 "device": {
                     "platform": "backend-verifier",
@@ -293,13 +271,12 @@ def main() -> int:
         results["aasa_status"] = aasa_status
         if aasa_status != 200:
             warnings.append(
-                f"The configured share-link host {share_link_host} does not serve apple-app-site-association (HTTP {aasa_status})."
+                f"The configured share-link host does not serve apple-app-site-association (HTTP {aasa_status})."
             )
     else:
         warnings.append("ROUTE_VAULT_SHARE_LINK_HOST is not configured.")
 
     if share_base_url:
-        results["share_base_url"] = share_base_url
         share_page_status = request_status(f"{share_base_url.rstrip('/')}/lists/shared")
         results["share_page_status"] = share_page_status
         if share_page_status != 200:
