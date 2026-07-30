@@ -1,0 +1,8 @@
+// Copy this file to Configuration/DeveloperSigning.xcconfig for local use only.
+// The copied file is gitignored and should not be committed.
+
+// Apple Developer Team ID from developer.apple.com/account
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
+
+// Optional: override the bundle identifier if needed for your own team/account.
+// PRODUCT_BUNDLE_IDENTIFIER = com.yourname.terigo

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Terigo</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSpokenName</key>
+	<string>Terigo</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.myaport.RouteVault.oauth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>routevault</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>strava</string>
+	</array>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Terigo uses your location during an active route activity, including while the screen is locked, so route tracking stays current and the app can alert you if you go off route.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Terigo uses your location to track your progress along saved routes, center maps around you, and keep an active route activity current while the screen is locked.</string>
+	<key>MBXAccessToken</key>
+	<string>$(ROUTE_VAULT_MAPBOX_PUBLIC_TOKEN)</string>
+	<key>RouteVaultRedirectHost</key>
+	<string>$(ROUTE_VAULT_REDIRECT_HOST)</string>
+	<key>RouteVaultRedirectScheme</key>
+	<string>$(ROUTE_VAULT_REDIRECT_SCHEME)</string>
+	<key>RouteVaultMapboxPublicToken</key>
+	<string>$(ROUTE_VAULT_MAPBOX_PUBLIC_TOKEN)</string>
+	<key>RouteVaultFunctionsBaseURL</key>
+	<string>$(ROUTE_VAULT_FUNCTIONS_BASE_URL)</string>
+	<key>RouteVaultSupabasePublishableKey</key>
+	<string>$(ROUTE_VAULT_SUPABASE_PUBLISHABLE_KEY)</string>
+	<key>RouteVaultSupabaseURL</key>
+	<string>$(ROUTE_VAULT_SUPABASE_URL)</string>
+	<key>RouteVaultShareBaseURL</key>
+	<string>$(ROUTE_VAULT_SHARE_BASE_URL)</string>
+	<key>RouteVaultStravaAuthBrokerURL</key>
+	<string>$(ROUTE_VAULT_STRAVA_AUTH_BROKER_URL)</string>
+	<key>RouteVaultStravaClientID</key>
+	<string>$(ROUTE_VAULT_STRAVA_CLIENT_ID)</string>
+	<key>RouteVaultStravaClientSecret</key>
+	<string>$(ROUTE_VAULT_STRAVA_CLIENT_SECRET)</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+	<key>UILaunchScreen</key>
+	<dict/>
+</dict>
+</plist>

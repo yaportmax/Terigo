@@ -1,0 +1,766 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 71;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		136ADE9191E32963DF4E737D /* RouteMapboxSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC977DE9D5B703157007B77 /* RouteMapboxSupport.swift */; };
+		198F6B3CC0AC3743B246F66B /* RouteVaultRuntimeConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91D385C459C4395C649C276 /* RouteVaultRuntimeConfiguration.swift */; };
+		26B5CC80F8C4D97EAE958480 /* MapboxMaps in Frameworks */ = {isa = PBXBuildFile; productRef = 86AA232547A5397372D082C1 /* MapboxMaps */; };
+		372EB6E0B94F1B36C2601B59 /* RouteVaultAccountManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23A40F45FC4E686C95461123 /* RouteVaultAccountManager.swift */; };
+		38753EF0B334F2A8EE9A4A20 /* RouteVaultAccountModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515CFC26B2EE18C51006CFFE /* RouteVaultAccountModels.swift */; };
+		4850627F002FA1FEE4E26923 /* RouteVaultRootScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87551EBB1C5EC3F5C0042F9 /* RouteVaultRootScreen.swift */; };
+		4C41A93B92AB4C719B22E101 /* ActivityCoverageSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C41A93B92AB4C719B22E201 /* ActivityCoverageSupport.swift */; };
+		4C41A93B92AB4C719B22E102 /* ActivitiesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C41A93B92AB4C719B22E202 /* ActivitiesModel.swift */; };
+		4C41A93B92AB4C719B22E103 /* ActivitiesScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C41A93B92AB4C719B22E203 /* ActivitiesScreen.swift */; };
+		4C41A93B92AB4C719B22E104 /* ActivityForecastSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C41A93B92AB4C719B22E204 /* ActivityForecastSupport.swift */; };
+		4C41A93B92AB4C719B22E105 /* ActivityTrainingInsightsSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C41A93B92AB4C719B22E205 /* ActivityTrainingInsightsSupport.swift */; };
+		4C41A93B92AB4C719B22E106 /* ActivityEffortAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C41A93B92AB4C719B22E206 /* ActivityEffortAnalysisService.swift */; };
+		4C41A93B92AB4C719B22E107 /* ActivityEffortAnalysis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C41A93B92AB4C719B22E207 /* ActivityEffortAnalysis.swift */; };
+		4C41A93B92AB4C719B22E108 /* AppStoreScreenshotSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C41A93B92AB4C719B22E208 /* AppStoreScreenshotSupport.swift */; };
+		61E91B626D84A7F0B7EF384F /* SharedRouteListScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF94DC5DEDC60EF89E10BDBB /* SharedRouteListScreen.swift */; };
+		6759BAACF48DCA1AC2978E78 /* RouteVaultAccountSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B571DE44F10E6631A22426 /* RouteVaultAccountSessionStore.swift */; };
+		6B4C3591D1DEBAF829A85DEF /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 79E7261EBB851398FAEC33DF /* Foundation.framework */; };
+		97F211B85B0B6E5A2400A483 /* RouteVaultBackendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53EA2C3997BC3B4031EFCA9 /* RouteVaultBackendService.swift */; };
+		9824D9F3449DE04E61F4F787 /* RouteVaultListSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F5A607FDDDB42D075D35186 /* RouteVaultListSyncService.swift */; };
+		A00000000000000000000001 /* StravaVaultApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000001 /* StravaVaultApp.swift */; };
+		A00000000000000000000002 /* RouteRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000002 /* RouteRecord.swift */; };
+		A00000000000000000000003 /* RouteFilters.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000003 /* RouteFilters.swift */; };
+		A00000000000000000000004 /* StravaSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000004 /* StravaSession.swift */; };
+		A00000000000000000000005 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000005 /* KeychainStore.swift */; };
+		A00000000000000000000006 /* StravaCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000006 /* StravaCredentialStore.swift */; };
+		A00000000000000000000007 /* StravaAuthSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000007 /* StravaAuthSessionCoordinator.swift */; };
+		A00000000000000000000008 /* StravaAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000008 /* StravaAPIService.swift */; };
+		A00000000000000000000009 /* RouteDisplayFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000009 /* RouteDisplayFormatter.swift */; };
+		A0000000000000000000000A /* RouteLibraryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000A /* RouteLibraryModel.swift */; };
+		A0000000000000000000000B /* RouteLibraryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000B /* RouteLibraryScreen.swift */; };
+		A0000000000000000000000C /* RouteCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000C /* RouteCardView.swift */; };
+		A0000000000000000000000D /* RouteEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000D /* RouteEditorSheet.swift */; };
+		A0000000000000000000000E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000E /* Assets.xcassets */; };
+		A00000000000000000000011 /* GPXImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000011 /* GPXImportService.swift */; };
+		A00000000000000000000012 /* RouteStartLocationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000012 /* RouteStartLocationSheet.swift */; };
+		A00000000000000000000013 /* RouteOfflineAssetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000013 /* RouteOfflineAssetService.swift */; };
+		A00000000000000000000014 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000014 /* PrivacyInfo.xcprivacy */; };
+		A00000000000000000000015 /* RouteTrackingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000015 /* RouteTrackingSession.swift */; };
+		A00000000000000000000016 /* RouteTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000016 /* RouteTrackingView.swift */; };
+		A00000000000000000000019 /* ActivityRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000019 /* ActivityRecord.swift */; };
+		A0000000000000000000001A /* DataExportScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000001A /* DataExportScreen.swift */; };
+		B914CA3AB75981E1F73A6370 /* RouteListSharingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10AC37DB49FA566B1E85BE07 /* RouteListSharingSheet.swift */; };
+		C4A9D7F124C4B5E900A6B101 /* RouteWeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4A9D7F124C4B5E900A6B102 /* RouteWeatherService.swift */; };
+		D20D833448729D7FAC0AD905 /* StravaVaultCleanUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D74535380DC066CC06029629 /* StravaVaultCleanUITests.swift */; };
+		D3A948DF49581DAC055E23F1 /* StravaVaultCleanLaunchPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58AFF4208C0B884D83EE134A /* StravaVaultCleanLaunchPerformanceTests.swift */; };
+		D4A1B8F42C47D00100A6B101 /* RouteTrackingNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A1B8F42C47D00100A6B102 /* RouteTrackingNotificationService.swift */; };
+		E4A3BF7193CC32F29A40D67E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 79E7261EBB851398FAEC33DF /* Foundation.framework */; };
+		F1A000000000000000000001 /* ActivitiesModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A000000000000000000002 /* ActivitiesModelTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		38A0DA491292B378EBDB9CFE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E00000000000000000000002 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E00000000000000000000001;
+			remoteInfo = StravaVault;
+		};
+		B48155F4BFE1AC50BA2F7470 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E00000000000000000000002 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E00000000000000000000001;
+			remoteInfo = StravaVault;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		10AC37DB49FA566B1E85BE07 /* RouteListSharingSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteListSharingSheet.swift; sourceTree = "<group>"; };
+		23A40F45FC4E686C95461123 /* RouteVaultAccountManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteVaultAccountManager.swift; sourceTree = "<group>"; };
+		33A624B01B12764F001C5D05 /* TMPUITarget.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TMPUITarget.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C41A93B92AB4C719B22E201 /* ActivityCoverageSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityCoverageSupport.swift; sourceTree = "<group>"; };
+		4C41A93B92AB4C719B22E202 /* ActivitiesModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivitiesModel.swift; sourceTree = "<group>"; };
+		4C41A93B92AB4C719B22E203 /* ActivitiesScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivitiesScreen.swift; sourceTree = "<group>"; };
+		4C41A93B92AB4C719B22E204 /* ActivityForecastSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityForecastSupport.swift; sourceTree = "<group>"; };
+		4C41A93B92AB4C719B22E205 /* ActivityTrainingInsightsSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTrainingInsightsSupport.swift; sourceTree = "<group>"; };
+		4C41A93B92AB4C719B22E206 /* ActivityEffortAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityEffortAnalysisService.swift; sourceTree = "<group>"; };
+		4C41A93B92AB4C719B22E207 /* ActivityEffortAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityEffortAnalysis.swift; sourceTree = "<group>"; };
+		4C41A93B92AB4C719B22E208 /* AppStoreScreenshotSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreScreenshotSupport.swift; sourceTree = "<group>"; };
+		4F15C46C057E450572F99F70 /* StravaVaultCleanTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StravaVaultCleanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		515CFC26B2EE18C51006CFFE /* RouteVaultAccountModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteVaultAccountModels.swift; sourceTree = "<group>"; };
+		57C742E4BA601E6174E66CDB /* StravaVaultCleanUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StravaVaultCleanUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		58AFF4208C0B884D83EE134A /* StravaVaultCleanLaunchPerformanceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaVaultCleanLaunchPerformanceTests.swift; sourceTree = "<group>"; };
+		79E7261EBB851398FAEC33DF /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		7F5A607FDDDB42D075D35186 /* RouteVaultListSyncService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteVaultListSyncService.swift; sourceTree = "<group>"; };
+		A10000000000000000000001 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Configuration/Debug.xcconfig; sourceTree = SOURCE_ROOT; };
+		A10000000000000000000002 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Configuration/Release.xcconfig; sourceTree = SOURCE_ROOT; };
+		B00000000000000000000001 /* StravaVaultApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StravaVaultApp.swift; sourceTree = "<group>"; };
+		B00000000000000000000002 /* RouteRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteRecord.swift; sourceTree = "<group>"; };
+		B00000000000000000000003 /* RouteFilters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteFilters.swift; sourceTree = "<group>"; };
+		B00000000000000000000004 /* StravaSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StravaSession.swift; sourceTree = "<group>"; };
+		B00000000000000000000005 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		B00000000000000000000006 /* StravaCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StravaCredentialStore.swift; sourceTree = "<group>"; };
+		B00000000000000000000007 /* StravaAuthSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StravaAuthSessionCoordinator.swift; sourceTree = "<group>"; };
+		B00000000000000000000008 /* StravaAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StravaAPIService.swift; sourceTree = "<group>"; };
+		B00000000000000000000009 /* RouteDisplayFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RouteDisplayFormatter.swift; path = RouteFormatters.swift; sourceTree = "<group>"; };
+		B0000000000000000000000A /* RouteLibraryModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteLibraryModel.swift; sourceTree = "<group>"; };
+		B0000000000000000000000B /* RouteLibraryScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteLibraryScreen.swift; sourceTree = "<group>"; };
+		B0000000000000000000000C /* RouteCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteCardView.swift; sourceTree = "<group>"; };
+		B0000000000000000000000D /* RouteEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteEditorSheet.swift; sourceTree = "<group>"; };
+		B0000000000000000000000E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B0000000000000000000000F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B00000000000000000000010 /* Terigo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Terigo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B00000000000000000000011 /* GPXImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPXImportService.swift; sourceTree = "<group>"; };
+		B00000000000000000000012 /* RouteStartLocationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteStartLocationSheet.swift; sourceTree = "<group>"; };
+		B00000000000000000000013 /* RouteOfflineAssetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteOfflineAssetService.swift; sourceTree = "<group>"; };
+		B00000000000000000000014 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		B00000000000000000000015 /* RouteTrackingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteTrackingSession.swift; sourceTree = "<group>"; };
+		B00000000000000000000016 /* RouteTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteTrackingView.swift; sourceTree = "<group>"; };
+		B00000000000000000000019 /* ActivityRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityRecord.swift; sourceTree = "<group>"; };
+		B0000000000000000000001A /* DataExportScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportScreen.swift; sourceTree = "<group>"; };
+		B4B571DE44F10E6631A22426 /* RouteVaultAccountSessionStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteVaultAccountSessionStore.swift; sourceTree = "<group>"; };
+		BF94DC5DEDC60EF89E10BDBB /* SharedRouteListScreen.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedRouteListScreen.swift; sourceTree = "<group>"; };
+		C4A9D7F124C4B5E900A6B102 /* RouteWeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteWeatherService.swift; sourceTree = "<group>"; };
+		C87551EBB1C5EC3F5C0042F9 /* RouteVaultRootScreen.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteVaultRootScreen.swift; sourceTree = "<group>"; };
+		C91D385C459C4395C649C276 /* RouteVaultRuntimeConfiguration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteVaultRuntimeConfiguration.swift; sourceTree = "<group>"; };
+		CBC977DE9D5B703157007B77 /* RouteMapboxSupport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteMapboxSupport.swift; sourceTree = "<group>"; };
+		D4A1B8F42C47D00100A6B102 /* RouteTrackingNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteTrackingNotificationService.swift; sourceTree = "<group>"; };
+		D74535380DC066CC06029629 /* StravaVaultCleanUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaVaultCleanUITests.swift; sourceTree = "<group>"; };
+		E53EA2C3997BC3B4031EFCA9 /* RouteVaultBackendService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteVaultBackendService.swift; sourceTree = "<group>"; };
+		F1A000000000000000000002 /* ActivitiesModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivitiesModelTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0516B3ACC841469F8FBC4496 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E4A3BF7193CC32F29A40D67E /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9C886FD4835F7F6DA4BF7153 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6B4C3591D1DEBAF829A85DEF /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D00000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				26B5CC80F8C4D97EAE958480 /* MapboxMaps in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		16646559F064DC347CCAFB8C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				7CFB909116D531ED3E922B39 /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		582ABA0D63619F55EC369F64 /* StravaVaultCleanTests */ = {
+			isa = PBXGroup;
+			children = (
+				F1A000000000000000000002 /* ActivitiesModelTests.swift */,
+			);
+			path = StravaVaultCleanTests;
+			sourceTree = "<group>";
+		};
+		7CFB909116D531ED3E922B39 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				79E7261EBB851398FAEC33DF /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000003 /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000001 /* Debug.xcconfig */,
+				A10000000000000000000002 /* Release.xcconfig */,
+			);
+			name = Configuration;
+			sourceTree = "<group>";
+		};
+		C00000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000003 /* Configuration */,
+				C00000000000000000000002 /* StravaVault */,
+				C00000000000000000000003 /* Products */,
+				16646559F064DC347CCAFB8C /* Frameworks */,
+				582ABA0D63619F55EC369F64 /* StravaVaultCleanTests */,
+				D7772C15CE230654E1D67E3C /* StravaVaultCleanUITests */,
+			);
+			sourceTree = "<group>";
+		};
+		C00000000000000000000002 /* StravaVault */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000001 /* StravaVaultApp.swift */,
+				C00000000000000000000004 /* Models */,
+				C00000000000000000000005 /* Services */,
+				C00000000000000000000006 /* ViewModels */,
+				C00000000000000000000007 /* Views */,
+				B0000000000000000000000E /* Assets.xcassets */,
+				B00000000000000000000014 /* PrivacyInfo.xcprivacy */,
+				B0000000000000000000000F /* Info.plist */,
+			);
+			path = StravaVault;
+			sourceTree = "<group>";
+		};
+		C00000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000010 /* Terigo.app */,
+				4F15C46C057E450572F99F70 /* StravaVaultCleanTests.xctest */,
+				33A624B01B12764F001C5D05 /* TMPUITarget.xctest */,
+				57C742E4BA601E6174E66CDB /* StravaVaultCleanUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C00000000000000000000004 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				4C41A93B92AB4C719B22E207 /* ActivityEffortAnalysis.swift */,
+				B00000000000000000000019 /* ActivityRecord.swift */,
+				B00000000000000000000002 /* RouteRecord.swift */,
+				B00000000000000000000003 /* RouteFilters.swift */,
+				B00000000000000000000004 /* StravaSession.swift */,
+				515CFC26B2EE18C51006CFFE /* RouteVaultAccountModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		C00000000000000000000005 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				4C41A93B92AB4C719B22E206 /* ActivityEffortAnalysisService.swift */,
+				4C41A93B92AB4C719B22E201 /* ActivityCoverageSupport.swift */,
+				4C41A93B92AB4C719B22E204 /* ActivityForecastSupport.swift */,
+				4C41A93B92AB4C719B22E205 /* ActivityTrainingInsightsSupport.swift */,
+				4C41A93B92AB4C719B22E208 /* AppStoreScreenshotSupport.swift */,
+				B00000000000000000000005 /* KeychainStore.swift */,
+				B00000000000000000000006 /* StravaCredentialStore.swift */,
+				B00000000000000000000007 /* StravaAuthSessionCoordinator.swift */,
+				B00000000000000000000008 /* StravaAPIService.swift */,
+				B00000000000000000000009 /* RouteDisplayFormatter.swift */,
+				B00000000000000000000011 /* GPXImportService.swift */,
+				B00000000000000000000013 /* RouteOfflineAssetService.swift */,
+				B00000000000000000000015 /* RouteTrackingSession.swift */,
+				D4A1B8F42C47D00100A6B102 /* RouteTrackingNotificationService.swift */,
+				C4A9D7F124C4B5E900A6B102 /* RouteWeatherService.swift */,
+				CBC977DE9D5B703157007B77 /* RouteMapboxSupport.swift */,
+				C91D385C459C4395C649C276 /* RouteVaultRuntimeConfiguration.swift */,
+				B4B571DE44F10E6631A22426 /* RouteVaultAccountSessionStore.swift */,
+				E53EA2C3997BC3B4031EFCA9 /* RouteVaultBackendService.swift */,
+				7F5A607FDDDB42D075D35186 /* RouteVaultListSyncService.swift */,
+				23A40F45FC4E686C95461123 /* RouteVaultAccountManager.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		C00000000000000000000006 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				4C41A93B92AB4C719B22E202 /* ActivitiesModel.swift */,
+				B0000000000000000000000A /* RouteLibraryModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		C00000000000000000000007 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				4C41A93B92AB4C719B22E203 /* ActivitiesScreen.swift */,
+				B0000000000000000000000B /* RouteLibraryScreen.swift */,
+				B00000000000000000000012 /* RouteStartLocationSheet.swift */,
+				B0000000000000000000000C /* RouteCardView.swift */,
+				B0000000000000000000000D /* RouteEditorSheet.swift */,
+				B00000000000000000000016 /* RouteTrackingView.swift */,
+				B0000000000000000000001A /* DataExportScreen.swift */,
+				C87551EBB1C5EC3F5C0042F9 /* RouteVaultRootScreen.swift */,
+				10AC37DB49FA566B1E85BE07 /* RouteListSharingSheet.swift */,
+				BF94DC5DEDC60EF89E10BDBB /* SharedRouteListScreen.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		D7772C15CE230654E1D67E3C /* StravaVaultCleanUITests */ = {
+			isa = PBXGroup;
+			children = (
+				D74535380DC066CC06029629 /* StravaVaultCleanUITests.swift */,
+				58AFF4208C0B884D83EE134A /* StravaVaultCleanLaunchPerformanceTests.swift */,
+			);
+			path = StravaVaultCleanUITests;
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4FB397C563343FA08ECC62F1 /* StravaVaultCleanUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D80BC4C4CA56DAE05A21C519 /* Build configuration list for PBXNativeTarget "StravaVaultCleanUITests" */;
+			buildPhases = (
+				070FE2B755A5E3C2F92C062C /* Sources */,
+				9C886FD4835F7F6DA4BF7153 /* Frameworks */,
+				6AFC5911AE999CF4A1BFD7A6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				67FE2B5CA1CDB961B2CA959A /* PBXTargetDependency */,
+			);
+			name = StravaVaultCleanUITests;
+			productName = StravaVaultCleanUITests;
+			productReference = 57C742E4BA601E6174E66CDB /* StravaVaultCleanUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		CB2C7111E4271A86BBAEC652 /* StravaVaultCleanTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A91CF9A4860D612EB05C987F /* Build configuration list for PBXNativeTarget "StravaVaultCleanTests" */;
+			buildPhases = (
+				A5F3E6FB1E875B5CDFD58CA9 /* Sources */,
+				0516B3ACC841469F8FBC4496 /* Frameworks */,
+				68525B4DC085FDD3262F3A71 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9528A5B86F20B724DA41E540 /* PBXTargetDependency */,
+			);
+			name = StravaVaultCleanTests;
+			productName = StravaVaultCleanTests;
+			productReference = 4F15C46C057E450572F99F70 /* StravaVaultCleanTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		E00000000000000000000001 /* StravaVault */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F00000000000000000000002 /* Build configuration list for PBXNativeTarget "StravaVault" */;
+			buildPhases = (
+				D00000000000000000000002 /* Sources */,
+				D00000000000000000000001 /* Frameworks */,
+				D00000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = StravaVault;
+			packageProductDependencies = (
+				86AA232547A5397372D082C1 /* MapboxMaps */,
+			);
+			productName = StravaVault;
+			productReference = B00000000000000000000010 /* Terigo.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E00000000000000000000002 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					4FB397C563343FA08ECC62F1 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = E00000000000000000000001;
+					};
+					E00000000000000000000001 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+				};
+			};
+			buildConfigurationList = F00000000000000000000001 /* Build configuration list for PBXProject "StravaVaultClean" */;
+			compatibilityVersion = "Xcode 16.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = C00000000000000000000001;
+			packageReferences = (
+				12F79179235CCEBFD7ECDC67 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */,
+			);
+			productRefGroup = C00000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E00000000000000000000001 /* StravaVault */,
+				CB2C7111E4271A86BBAEC652 /* StravaVaultCleanTests */,
+				4FB397C563343FA08ECC62F1 /* StravaVaultCleanUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		68525B4DC085FDD3262F3A71 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6AFC5911AE999CF4A1BFD7A6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D00000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A0000000000000000000000E /* Assets.xcassets in Resources */,
+				A00000000000000000000014 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		070FE2B755A5E3C2F92C062C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D20D833448729D7FAC0AD905 /* StravaVaultCleanUITests.swift in Sources */,
+				D3A948DF49581DAC055E23F1 /* StravaVaultCleanLaunchPerformanceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A5F3E6FB1E875B5CDFD58CA9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F1A000000000000000000001 /* ActivitiesModelTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D00000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000001 /* StravaVaultApp.swift in Sources */,
+				A00000000000000000000019 /* ActivityRecord.swift in Sources */,
+				4C41A93B92AB4C719B22E107 /* ActivityEffortAnalysis.swift in Sources */,
+				4C41A93B92AB4C719B22E101 /* ActivityCoverageSupport.swift in Sources */,
+				4C41A93B92AB4C719B22E106 /* ActivityEffortAnalysisService.swift in Sources */,
+				4C41A93B92AB4C719B22E104 /* ActivityForecastSupport.swift in Sources */,
+				4C41A93B92AB4C719B22E105 /* ActivityTrainingInsightsSupport.swift in Sources */,
+				4C41A93B92AB4C719B22E108 /* AppStoreScreenshotSupport.swift in Sources */,
+				A00000000000000000000002 /* RouteRecord.swift in Sources */,
+				A00000000000000000000003 /* RouteFilters.swift in Sources */,
+				A00000000000000000000004 /* StravaSession.swift in Sources */,
+				A00000000000000000000005 /* KeychainStore.swift in Sources */,
+				A00000000000000000000006 /* StravaCredentialStore.swift in Sources */,
+				A00000000000000000000007 /* StravaAuthSessionCoordinator.swift in Sources */,
+				A00000000000000000000008 /* StravaAPIService.swift in Sources */,
+				A00000000000000000000009 /* RouteDisplayFormatter.swift in Sources */,
+				A00000000000000000000011 /* GPXImportService.swift in Sources */,
+				A00000000000000000000013 /* RouteOfflineAssetService.swift in Sources */,
+				A00000000000000000000015 /* RouteTrackingSession.swift in Sources */,
+				D4A1B8F42C47D00100A6B101 /* RouteTrackingNotificationService.swift in Sources */,
+				C4A9D7F124C4B5E900A6B101 /* RouteWeatherService.swift in Sources */,
+				4C41A93B92AB4C719B22E102 /* ActivitiesModel.swift in Sources */,
+				A0000000000000000000000A /* RouteLibraryModel.swift in Sources */,
+				4C41A93B92AB4C719B22E103 /* ActivitiesScreen.swift in Sources */,
+				A0000000000000000000000B /* RouteLibraryScreen.swift in Sources */,
+				A00000000000000000000012 /* RouteStartLocationSheet.swift in Sources */,
+				A0000000000000000000000C /* RouteCardView.swift in Sources */,
+				A0000000000000000000000D /* RouteEditorSheet.swift in Sources */,
+				A00000000000000000000016 /* RouteTrackingView.swift in Sources */,
+				A0000000000000000000001A /* DataExportScreen.swift in Sources */,
+				136ADE9191E32963DF4E737D /* RouteMapboxSupport.swift in Sources */,
+				38753EF0B334F2A8EE9A4A20 /* RouteVaultAccountModels.swift in Sources */,
+				198F6B3CC0AC3743B246F66B /* RouteVaultRuntimeConfiguration.swift in Sources */,
+				6759BAACF48DCA1AC2978E78 /* RouteVaultAccountSessionStore.swift in Sources */,
+				97F211B85B0B6E5A2400A483 /* RouteVaultBackendService.swift in Sources */,
+				9824D9F3449DE04E61F4F787 /* RouteVaultListSyncService.swift in Sources */,
+				372EB6E0B94F1B36C2601B59 /* RouteVaultAccountManager.swift in Sources */,
+				4850627F002FA1FEE4E26923 /* RouteVaultRootScreen.swift in Sources */,
+				B914CA3AB75981E1F73A6370 /* RouteListSharingSheet.swift in Sources */,
+				61E91B626D84A7F0B7EF384F /* SharedRouteListScreen.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		67FE2B5CA1CDB961B2CA959A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = StravaVault;
+			target = E00000000000000000000001 /* StravaVault */;
+			targetProxy = B48155F4BFE1AC50BA2F7470 /* PBXContainerItemProxy */;
+		};
+		9528A5B86F20B724DA41E540 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = StravaVault;
+			target = E00000000000000000000001 /* StravaVault */;
+			targetProxy = 38A0DA491292B378EBDB9CFE /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		25678E816895B1622E017599 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.myaport.RouteVault.StravaVaultCleanTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_MODULE_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Terigo.app/Terigo";
+			};
+			name = Debug;
+		};
+		465229988B1E9BA54AD60DB0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.myaport.RouteVault.StravaVaultCleanTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_MODULE_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Terigo.app/Terigo";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		60C4658F0F2F2E15832B042A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.myaport.RouteVault.StravaVaultCleanUITests;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = StravaVault;
+			};
+			name = Debug;
+		};
+		8326D5CD456536C5303850E9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.myaport.RouteVault.StravaVaultCleanUITests;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = StravaVault;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		F00000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A10000000000000000000001 /* Debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F00000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A10000000000000000000002 /* Release.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		F00000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A10000000000000000000001 /* Debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = StravaVault/RouteVault.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 11;
+				DEVELOPMENT_ASSET_PATHS = "\"StravaVault/Resources/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = StravaVault/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.myaport.RouteVault;
+				PRODUCT_NAME = Terigo;
+				ROUTE_VAULT_MAPBOX_PUBLIC_TOKEN = "$(MAPBOX_PUBLIC_TOKEN)";
+				ROUTE_VAULT_REDIRECT_HOST = localhost;
+				ROUTE_VAULT_REDIRECT_SCHEME = routevault;
+				ROUTE_VAULT_STRAVA_CLIENT_ID = "$(STRAVA_CLIENT_ID)";
+				ROUTE_VAULT_STRAVA_CLIENT_SECRET = "$(STRAVA_CLIENT_SECRET)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_MODULE_NAME = StravaVault;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		F00000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A10000000000000000000002 /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = StravaVault/RouteVault.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 11;
+				DEVELOPMENT_ASSET_PATHS = "\"StravaVault/Resources/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = StravaVault/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.myaport.RouteVault;
+				PRODUCT_NAME = Terigo;
+				ROUTE_VAULT_MAPBOX_PUBLIC_TOKEN = "$(MAPBOX_PUBLIC_TOKEN)";
+				ROUTE_VAULT_REDIRECT_HOST = localhost;
+				ROUTE_VAULT_REDIRECT_SCHEME = routevault;
+				ROUTE_VAULT_STRAVA_CLIENT_ID = "$(STRAVA_CLIENT_ID)";
+				ROUTE_VAULT_STRAVA_CLIENT_SECRET = "";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_MODULE_NAME = StravaVault;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A91CF9A4860D612EB05C987F /* Build configuration list for PBXNativeTarget "StravaVaultCleanTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				465229988B1E9BA54AD60DB0 /* Release */,
+				25678E816895B1622E017599 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D80BC4C4CA56DAE05A21C519 /* Build configuration list for PBXNativeTarget "StravaVaultCleanUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8326D5CD456536C5303850E9 /* Release */,
+				60C4658F0F2F2E15832B042A /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F00000000000000000000001 /* Build configuration list for PBXProject "StravaVaultClean" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F00000000000000000000003 /* Debug */,
+				F00000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F00000000000000000000002 /* Build configuration list for PBXNativeTarget "StravaVault" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F00000000000000000000005 /* Debug */,
+				F00000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		12F79179235CCEBFD7ECDC67 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mapbox/mapbox-maps-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		86AA232547A5397372D082C1 /* MapboxMaps */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 12F79179235CCEBFD7ECDC67 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */;
+			productName = MapboxMaps;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = E00000000000000000000002 /* Project object */;
+}

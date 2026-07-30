@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Shared Terigo List</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0b0c;
+      --panel: #16181d;
+      --muted: #9ca3af;
+      --text: #f5f5f5;
+      --accent: #ff7a1a;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+
+    .card, li {
+      background: var(--panel);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .card {
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin: 0 0 8px;
+    }
+
+    .meta, .secondary {
+      color: var(--muted);
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    a, button {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    button {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section id="summary" class="card">
+      <h1>Loading shared list…</h1>
+      <p class="secondary">Terigo is fetching the latest live version of this list.</p>
+    </section>
+    <ul id="routes"></ul>
+  </main>
+
+  <script>
+    const backendBaseURL = "https://jpxinpbqjovazsxrhdkn.supabase.co/functions/v1/shared-list";
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    const summary = document.getElementById("summary");
+    const routes = document.getElementById("routes");
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    async function load() {
+      if (!token) {
+        summary.innerHTML = "<h1>Missing share token</h1><p class='secondary'>This Terigo link is incomplete.</p>";
+        return;
+      }
+
+      try {
+        const response = await fetch(`${backendBaseURL}?token=${encodeURIComponent(token)}`, {
+          headers: { Accept: "application/json" }
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || "This shared list is unavailable.");
+        }
+
+        summary.innerHTML = `
+          <h1>${escapeHtml(payload.name)}</h1>
+          <p class="secondary">By ${escapeHtml(payload.ownerDisplayName)} • Updated ${escapeHtml(new Date(payload.updatedAt).toLocaleString())}</p>
+          <p>${escapeHtml(payload.listDescription || "")}</p>
+          <p><a href="routevault://lists/shared?token=${encodeURIComponent(token)}">Open in Terigo</a></p>
+        `;
+
+        routes.innerHTML = payload.routes.map((route) => `
+          <li>
+            <strong>${escapeHtml(route.name)}</strong>
+            <div class="secondary">${escapeHtml(route.displayLocation || "")}</div>
+            <div class="secondary">${Math.round(route.distanceMeters)} m • ${Math.round(route.elevationGainMeters)} m climb • ${escapeHtml(route.sportKind)}</div>
+            ${
+              route.isDownloadable
+                ? `<p><a href="${escapeHtml(route.downloadURLString)}">Download GPX</a></p>`
+                : `<p class="secondary">${escapeHtml(route.shareabilityMessage || "View only")}</p>`
+            }
+          </li>
+        `).join("");
+      } catch (error) {
+        summary.innerHTML = `
+          <h1>Shared list unavailable</h1>
+          <p class="secondary">${escapeHtml(error.message || "This link could not be loaded.")}</p>
+        `;
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

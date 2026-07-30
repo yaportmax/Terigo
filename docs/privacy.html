@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Terigo Privacy Policy</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0b0c;
+      --panel: #16181d;
+      --muted: #9ca3af;
+      --text: #f5f5f5;
+      --accent: #ff7a1a;
+    }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 40px 20px 56px;
+    }
+    .card {
+      background: var(--panel);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    h1, h2 {
+      margin: 0 0 12px;
+    }
+    p, li {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    ul {
+      padding-left: 18px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card">
+      <h1>Terigo Privacy Policy</h1>
+      <p>Terigo stores your saved routes, route notes, offline route files, synced activity data, and credentials protected by the iOS Keychain on your device so the app can browse and track routes even when network access is limited.</p>
+      <p>When you use account-backed features, Terigo's hosted service stores your Strava athlete ID, display name, profile image URL, hashed Terigo session tokens, synced lists and sharing settings, route data you choose to share, and feedback you choose to submit. The hosted service verifies your identity with Strava but does not retain your Strava access or refresh token after that request finishes.</p>
+      <p>When you connect a Strava account, the app exchanges authorization data with Strava and the configured Strava auth broker so it can import the routes and activities you approved. If you choose to upload an activity, the app sends the selected GPX or activity data back to Strava.</p>
+      <p>When you inspect, share, follow, or download routes, the app may send coordinates or route metadata to network providers that power those features, including Apple services for search and geocoding, Mapbox for map tiles, terrain, and offline regions, Supabase for account-backed list sharing, Open-Meteo for route-start weather forecasts, and Overpass/OpenStreetMap services for route surface classification.</p>
+      <p>When route tracking is active, Terigo may continue receiving location updates while the app is in the background or the screen is locked so it can keep route progress current and alert you if you go off route. If you allow notifications, Terigo can send local off-route alerts during an active tracking session. Terigo does not include third-party advertising or cross-app tracking.</p>
+    </section>
+
+    <section class="card">
+      <h2>Support</h2>
+      <ul>
+        <li>Support page: <a href="https://yaportmax.github.io/Terigo/support.html">https://yaportmax.github.io/Terigo/support.html</a></li>
+        <li>Issue tracker: <a href="https://github.com/yaportmax/Terigo/issues">https://github.com/yaportmax/Terigo/issues</a></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Retention and Deletion</h2>
+      <p>Terigo account sessions expire after 45 days. Account and sharing data is retained while your account exists.</p>
+      <p>To delete your hosted Terigo profile, sessions, owned lists, sharing permissions, feedback, and stored shared-route files, open Account settings in Terigo and choose <strong>Delete Terigo Account</strong>. This does not delete your Strava account. Routes stored only on your iPhone remain until you remove them or delete the app.</p>
+      <p>Hosted-service logs and operational metadata may be retained by infrastructure providers only as needed for debugging, reliability, abuse prevention, and security monitoring, subject to those providers' retention and access controls.</p>
+    </section>
+  </main>
+</body>
+</html>

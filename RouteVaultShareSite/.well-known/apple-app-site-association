@@ -1,0 +1,16 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "4BY949S88S.com.myaport.RouteVault",
+        "paths": [
+          "/lists/shared",
+          "/lists/shared/*",
+          "/functions/v1/shared-list",
+          "/functions/v1/shared-list/*"
+        ]
+      }
+    ]
+  }
+}

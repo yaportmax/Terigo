@@ -1,0 +1,49 @@
+name: Bug report
+description: Report a reproducible Terigo problem without including private route or account data.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Do not include tokens, private GPX files, exact home locations, signing material, or another person's data.
+  - type: input
+    id: version
+    attributes:
+      label: Terigo version and build
+      placeholder: "1.0 (11)"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Device and iOS version
+      placeholder: "iPhone model, iOS version"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Use synthetic names and locations when possible.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed credentials and private athlete or location data.
+          required: true

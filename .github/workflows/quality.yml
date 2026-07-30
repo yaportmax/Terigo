@@ -1,0 +1,55 @@
+name: Public release checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.13"
+
+      - name: Validate public release
+        run: python Scripts/validate_public_release.py
+
+      - name: Validate scripts
+        run: |
+          bash -n AppStore/archive_and_upload.sh
+          bash -n AppStore/preflight_release.sh
+          bash -n Scripts/start_local_backend.sh
+          node --check AppStore/strava-auth-broker.js
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2
+        with:
+          deno-version: v2.x
+
+      - name: Check backend formatting
+        run: deno fmt --check supabase
+
+      - name: Type-check backend functions
+        run: deno check supabase/functions/*/index.ts supabase/local-functions-server.ts
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
