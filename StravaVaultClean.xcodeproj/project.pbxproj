@@ -55,6 +55,20 @@
 		D4A1B8F42C47D00100A6B101 /* RouteTrackingNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A1B8F42C47D00100A6B102 /* RouteTrackingNotificationService.swift */; };
 		E4A3BF7193CC32F29A40D67E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 79E7261EBB851398FAEC33DF /* Foundation.framework */; };
 		F1A000000000000000000001 /* ActivitiesModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A000000000000000000002 /* ActivitiesModelTests.swift */; };
+		D70A3296EE708A80D1906A48 /* LibraryAccountSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 945B3B995F8FD3A9287B21CD /* LibraryAccountSheets.swift */; };
+		E16CD859B6BEEC97A9EF3E4B /* RouteListsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB97ADB7428EF3DEB32B9A14 /* RouteListsScreen.swift */; };
+		690FFAAE2E5B97AC4FE01347 /* LibraryControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CE8E6EAC4ECC334AF24028A /* LibraryControls.swift */; };
+		D0DADA9303E15DA97EF48D67 /* RouteFiltersSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EB94EC7777F9DD10EBC3BA9 /* RouteFiltersSheet.swift */; };
+		D3D5C9E6308181DE5DF0D9F2 /* RouteResultsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F49C96E76A41F9B23903FA /* RouteResultsSection.swift */; };
+		43C038B212682FDF2E8EA2CF /* LibraryRangeControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF88B5BB72C426252A4F5700 /* LibraryRangeControls.swift */; };
+		807894BF5322921B4258FE3B /* LibraryFilterComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F493CC5120E9390BF9F69E9 /* LibraryFilterComponents.swift */; };
+		30BF3E0A565C20A6A096182A /* RouteMapBrowseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB3D7243E1F16453D18D7121 /* RouteMapBrowseSheet.swift */; };
+		9CA7771CC210857E3506459A /* RouteMapSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1615601D64FBF58D7E063AC9 /* RouteMapSearch.swift */; };
+		830745228DB091FB9EFC10AE /* RouteMapCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E32EF63E7741F57E45F1701 /* RouteMapCanvas.swift */; };
+		17FB9A8B01AA0935CBAF281A /* RouteMapPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30B82499981B16AA19F18335 /* RouteMapPresentation.swift */; };
+		F8F3A852D9957825D98007D4 /* RouteOfflineCenterSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134DA023EF4BDEE1F3E7CF7B /* RouteOfflineCenterSheet.swift */; };
+		0493ECC45E083F23EF386E4F /* RouteSpotlightIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 796D756B53C3E369AC129405 /* RouteSpotlightIndexer.swift */; };
+		ACB68456E8D9ED7E835D6EDB /* LibraryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2AE4381008163878A7B6CB4 /* LibraryComponents.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -128,6 +142,20 @@
 		D74535380DC066CC06029629 /* StravaVaultCleanUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaVaultCleanUITests.swift; sourceTree = "<group>"; };
 		E53EA2C3997BC3B4031EFCA9 /* RouteVaultBackendService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouteVaultBackendService.swift; sourceTree = "<group>"; };
 		F1A000000000000000000002 /* ActivitiesModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivitiesModelTests.swift; sourceTree = "<group>"; };
+		945B3B995F8FD3A9287B21CD /* LibraryAccountSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryAccountSheets.swift; sourceTree = "<group>"; };
+		BB97ADB7428EF3DEB32B9A14 /* RouteListsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteListsScreen.swift; sourceTree = "<group>"; };
+		6CE8E6EAC4ECC334AF24028A /* LibraryControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryControls.swift; sourceTree = "<group>"; };
+		6EB94EC7777F9DD10EBC3BA9 /* RouteFiltersSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteFiltersSheet.swift; sourceTree = "<group>"; };
+		F5F49C96E76A41F9B23903FA /* RouteResultsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteResultsSection.swift; sourceTree = "<group>"; };
+		AF88B5BB72C426252A4F5700 /* LibraryRangeControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryRangeControls.swift; sourceTree = "<group>"; };
+		2F493CC5120E9390BF9F69E9 /* LibraryFilterComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryFilterComponents.swift; sourceTree = "<group>"; };
+		FB3D7243E1F16453D18D7121 /* RouteMapBrowseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteMapBrowseSheet.swift; sourceTree = "<group>"; };
+		1615601D64FBF58D7E063AC9 /* RouteMapSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteMapSearch.swift; sourceTree = "<group>"; };
+		5E32EF63E7741F57E45F1701 /* RouteMapCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteMapCanvas.swift; sourceTree = "<group>"; };
+		30B82499981B16AA19F18335 /* RouteMapPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteMapPresentation.swift; sourceTree = "<group>"; };
+		134DA023EF4BDEE1F3E7CF7B /* RouteOfflineCenterSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteOfflineCenterSheet.swift; sourceTree = "<group>"; };
+		796D756B53C3E369AC129405 /* RouteSpotlightIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSpotlightIndexer.swift; sourceTree = "<group>"; };
+		C2AE4381008163878A7B6CB4 /* LibraryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryComponents.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -284,6 +312,20 @@
 			children = (
 				4C41A93B92AB4C719B22E203 /* ActivitiesScreen.swift */,
 				B0000000000000000000000B /* RouteLibraryScreen.swift */,
+				C2AE4381008163878A7B6CB4 /* LibraryComponents.swift */,
+				796D756B53C3E369AC129405 /* RouteSpotlightIndexer.swift */,
+				134DA023EF4BDEE1F3E7CF7B /* RouteOfflineCenterSheet.swift */,
+				30B82499981B16AA19F18335 /* RouteMapPresentation.swift */,
+				5E32EF63E7741F57E45F1701 /* RouteMapCanvas.swift */,
+				1615601D64FBF58D7E063AC9 /* RouteMapSearch.swift */,
+				FB3D7243E1F16453D18D7121 /* RouteMapBrowseSheet.swift */,
+				2F493CC5120E9390BF9F69E9 /* LibraryFilterComponents.swift */,
+				AF88B5BB72C426252A4F5700 /* LibraryRangeControls.swift */,
+				F5F49C96E76A41F9B23903FA /* RouteResultsSection.swift */,
+				6EB94EC7777F9DD10EBC3BA9 /* RouteFiltersSheet.swift */,
+				6CE8E6EAC4ECC334AF24028A /* LibraryControls.swift */,
+				BB97ADB7428EF3DEB32B9A14 /* RouteListsScreen.swift */,
+				945B3B995F8FD3A9287B21CD /* LibraryAccountSheets.swift */,
 				B00000000000000000000012 /* RouteStartLocationSheet.swift */,
 				B0000000000000000000000C /* RouteCardView.swift */,
 				B0000000000000000000000D /* RouteEditorSheet.swift */,
@@ -478,6 +520,20 @@
 				A0000000000000000000000A /* RouteLibraryModel.swift in Sources */,
 				4C41A93B92AB4C719B22E103 /* ActivitiesScreen.swift in Sources */,
 				A0000000000000000000000B /* RouteLibraryScreen.swift in Sources */,
+				ACB68456E8D9ED7E835D6EDB /* LibraryComponents.swift in Sources */,
+				0493ECC45E083F23EF386E4F /* RouteSpotlightIndexer.swift in Sources */,
+				F8F3A852D9957825D98007D4 /* RouteOfflineCenterSheet.swift in Sources */,
+				17FB9A8B01AA0935CBAF281A /* RouteMapPresentation.swift in Sources */,
+				830745228DB091FB9EFC10AE /* RouteMapCanvas.swift in Sources */,
+				9CA7771CC210857E3506459A /* RouteMapSearch.swift in Sources */,
+				30BF3E0A565C20A6A096182A /* RouteMapBrowseSheet.swift in Sources */,
+				807894BF5322921B4258FE3B /* LibraryFilterComponents.swift in Sources */,
+				43C038B212682FDF2E8EA2CF /* LibraryRangeControls.swift in Sources */,
+				D3D5C9E6308181DE5DF0D9F2 /* RouteResultsSection.swift in Sources */,
+				D0DADA9303E15DA97EF48D67 /* RouteFiltersSheet.swift in Sources */,
+				690FFAAE2E5B97AC4FE01347 /* LibraryControls.swift in Sources */,
+				E16CD859B6BEEC97A9EF3E4B /* RouteListsScreen.swift in Sources */,
+				D70A3296EE708A80D1906A48 /* LibraryAccountSheets.swift in Sources */,
 				A00000000000000000000012 /* RouteStartLocationSheet.swift in Sources */,
 				A0000000000000000000000C /* RouteCardView.swift in Sources */,
 				A0000000000000000000000D /* RouteEditorSheet.swift in Sources */,

@@ -1,3 +1,4 @@
+import CoreLocation
 import SwiftUI
 import UIKit
 
@@ -19,14 +20,11 @@ struct RouteCardView: View {
     }
 
     var body: some View {
-        routeCardBody
-            .onTapGesture(perform: onSelect)
-            .accessibilityElement(children: .combine)
-            .accessibilityAddTraits(.isButton)
-            .accessibilityAction {
-                onSelect()
-            }
-        .id("route-card-\(route.stravaRouteID)-\(appMeasurementSystemRawValue)-\(density.rawValue)")
+        Button(action: onSelect) {
+            routeCardBody
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
         .accessibilityIdentifier("route-row-\(route.stravaRouteID)")
     }
 
@@ -55,22 +53,8 @@ struct RouteCardView: View {
     }
 
     private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: density.cardCornerRadius, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: colorScheme == .dark
-                        ? [
-                            Color(red: 0.17, green: 0.18, blue: 0.21).opacity(0.96),
-                            Color(red: 0.11, green: 0.12, blue: 0.14).opacity(0.98)
-                        ]
-                        : [
-                            Color.white.opacity(0.92),
-                            Color(red: 0.96, green: 0.95, blue: 0.92).opacity(0.95)
-                        ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+        RoundedRectangle(cornerRadius: 22, style: .continuous)
+            .fill(TerigoTheme.surface)
     }
 
     private var cardOutline: some View {
@@ -163,25 +147,104 @@ private struct MediumRouteCardContent: View {
     let route: RouteRecord
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            RouteTitleBlock(route: route, titleFont: .system(.title3, design: .rounded, weight: .semibold))
-
-            RouteMetricRow(route: route, size: .regular)
-
-            RouteBadgeRow(route: route, size: .regular)
-
-            if route.hasLists {
-                RouteTagCapsules(tags: Array(route.listNames.prefix(3)), size: .regular, allowsHorizontalScroll: false)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .center, spacing: 14) {
+                RouteTraceThumbnail(coordinates: route.routeCoordinates)
+                    .frame(width: 64, height: 70)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(route.sportDisplayName.uppercased())
+                        .font(.caption2.weight(.bold))
+                        .tracking(1)
+                        .foregroundStyle(TerigoTheme.accent)
+                    Text(route.name)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                    if !route.displayLocation.isEmpty {
+                        Text(route.displayLocation)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
-
+            RouteMetricRow(route: route, size: .regular)
+            HStack(spacing: 8) {
+                if route.hasOfflineAssets {
+                    Label("Offline", systemImage: "arrow.down.circle.fill")
+                        .foregroundStyle(TerigoTheme.accent)
+                }
+                if route.isPrivate {
+                    Image(systemName: "lock.fill")
+                        .accessibilityLabel("Private route")
+                }
+                if let surface = route.surfaceDisplayName { Text(surface) }
+                Spacer(minLength: 0)
+                if let list = route.listNames.first {
+                    Label(list, systemImage: "square.stack")
+                        .lineLimit(1)
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
             if !route.notes.isEmpty {
                 Text(route.notes)
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
+        }
+    }
+}
 
-            RouteFooterLine(route: route)
+/// A local route outline makes each card recognizable without tile requests.
+struct RouteTraceThumbnail: View {
+    let coordinates: [CLLocationCoordinate2D]
+
+    var body: some View {
+        GeometryReader { geometry in
+            let points = projectedPoints(in: geometry.size)
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(TerigoTheme.accent.opacity(0.08))
+                Path { path in
+                    guard let first = points.first else { return }
+                    path.move(to: first)
+                    path.addLines(points)
+                }
+                .stroke(TerigoTheme.accent, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                if let first = points.first {
+                    Circle().fill(TerigoTheme.accent).frame(width: 7, height: 7).position(first)
+                } else {
+                    Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
+                        .foregroundStyle(TerigoTheme.accent)
+                }
+            }
+        }
+    }
+
+    private func projectedPoints(in size: CGSize) -> [CGPoint] {
+        let valid = coordinates.filter(CLLocationCoordinate2DIsValid)
+        guard let origin = valid.first else { return [] }
+        let scale = max(cos(origin.latitude * .pi / 180), 0.01)
+        // Unwrap around the start so routes crossing the date line stay compact.
+        let points = valid.map { coordinate in
+            let longitude = (coordinate.longitude - origin.longitude + 540).truncatingRemainder(dividingBy: 360) - 180
+            return CGPoint(x: longitude * scale, y: -coordinate.latitude)
+        }
+        let minX = points.map(\.x).min() ?? 0
+        let maxX = points.map(\.x).max() ?? 0
+        let minY = points.map(\.y).min() ?? 0
+        let maxY = points.map(\.y).max() ?? 0
+        let factor = min((size.width - 20) / max(maxX - minX, 0.00001), (size.height - 20) / max(maxY - minY, 0.00001))
+        return points.map {
+            CGPoint(x: ($0.x - (minX + maxX) / 2) * factor + size.width / 2,
+                    y: ($0.y - (minY + maxY) / 2) * factor + size.height / 2)
         }
     }
 }
@@ -527,7 +590,7 @@ private struct CapsuleLabel: View {
     private var foreground: Color {
         switch tone {
         case .accent:
-            return Color(red: 0.73, green: 0.29, blue: 0.14)
+            return TerigoTheme.accent
         case .neutral:
             return colorScheme == .dark ? Color.white.opacity(0.72) : .secondary
         }

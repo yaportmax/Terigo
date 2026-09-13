@@ -90,6 +90,7 @@ struct RouteTrackingView: View {
             Color.black.ignoresSafeArea()
 
             if session.hasTrackableGeometry {
+                if RouteVaultMapboxConfiguration.isConfigured {
                 RouteTrackingMapSurface(
                     route: route,
                     session: session,
@@ -101,6 +102,14 @@ struct RouteTrackingView: View {
                     onUserCameraInteraction: handleUserCameraInteraction
                 )
                 .ignoresSafeArea()
+                } else {
+                    TerigoNativeMap(tracks: [route.routeCoordinates, session.breadcrumbCoordinates],
+                                    centerRequest: recenterTrigger,
+                                    followCoordinate: followsUser ? session.currentLocation?.coordinate : nil,
+                                    onUserInteraction: handleUserCameraInteraction)
+                        .ignoresSafeArea()
+                }
+
             } else {
                 ContentUnavailableView(
                     "Route Tracking Unavailable",

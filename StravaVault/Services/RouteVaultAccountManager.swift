@@ -88,7 +88,7 @@ final class RouteVaultAccountManager {
     }
 
     var canUseBackendFeatures: Bool {
-        accountSession != nil
+        accountSession != nil && !AppUITestSupport.isEnabled
     }
 
     var accountCode: String? {
@@ -141,7 +141,7 @@ final class RouteVaultAccountManager {
         }
 
         do {
-            if AppUITestSupport.isReviewDemoEnabled {
+            if AppUITestSupport.shouldUseStubSession {
                 installReviewerDemoState(statusMessage: "Reviewer demo mode is ready.")
                 return
             }
@@ -194,6 +194,9 @@ final class RouteVaultAccountManager {
 
             await bootstrapBackendAccountIfPossible(force: true)
         } catch {
+            if let authError = error as? ASWebAuthenticationSessionError, authError.code == .canceledLogin {
+                return
+            }
             errorMessage = connectErrorMessage(for: error)
         }
     }

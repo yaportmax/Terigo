@@ -291,7 +291,7 @@ enum AppRouteListDensity: String, CaseIterable, Identifiable {
     case expanded
 
     static let storageKey = "appRouteListDensity"
-    static let defaultValue: AppRouteListDensity = .compact
+    static let defaultValue: AppRouteListDensity = .medium
 
     var id: String { rawValue }
 
@@ -494,6 +494,10 @@ enum AppUITestSupport {
         }
 
         resetPersistedState()
+        let arguments = ProcessInfo.processInfo.arguments
+        if let appearance = arguments.first(where: { $0.hasPrefix("--ui-appearance=") })?.split(separator: "=").last {
+            UserDefaults.standard.set(String(appearance), forKey: AppAppearance.storageKey)
+        }
     }
 
     static func makeModelConfiguration() -> ModelConfiguration {
@@ -598,6 +602,7 @@ enum AppUITestSupport {
     private static func resetPersistedState() {
         let defaults = UserDefaults.standard
         [
+            "terigo.localLibraryEnabled",
             AppAppearance.storageKey,
             AppMeasurementSystem.storageKey,
             AppRouteListDensity.storageKey,
@@ -1220,7 +1225,7 @@ enum AppUITestSupport {
 
 @main
 struct StravaVaultApp: App {
-    @AppStorage(AppAppearance.storageKey) private var appAppearanceRawValue = AppAppearance.dark.rawValue
+    @AppStorage(AppAppearance.storageKey) private var appAppearanceRawValue = AppAppearance.system.rawValue
 
     let modelContainer: ModelContainer
 
@@ -1251,6 +1256,6 @@ struct StravaVaultApp: App {
     }
 
     private var appAppearance: AppAppearance {
-        AppAppearance(rawValue: appAppearanceRawValue) ?? .dark
+        AppAppearance(rawValue: appAppearanceRawValue) ?? .system
     }
 }

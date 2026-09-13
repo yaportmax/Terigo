@@ -97,7 +97,7 @@ struct RouteEditorSheet: View {
     @State private var offlineStatusRevision = 0
     @State private var offlineDownloadSelection = RouteOfflineDownloadSelection(
         includesGPX: true,
-        mapStyles: [AppRouteMapStyle.defaultValue],
+        mapStyles: RouteVaultMapboxConfiguration.isConfigured ? [AppRouteMapStyle.defaultValue] : [],
         includesTerrain: false
     )
     @State private var didApplyScreenshotPresentation = false
@@ -120,14 +120,41 @@ struct RouteEditorSheet: View {
             Form {
                 bannerSection
                 mapSection
-                actionsSection
+                summarySection
                 overviewSection
                     .id(ScreenshotAnchor.overviewSection.rawValue)
                 weatherSection
                     .id(ScreenshotAnchor.weatherSection.rawValue)
                 organizationSection
                 notesSection
+                actionsSection
                 deleteSection
+            }
+            .scrollContentBackground(.hidden)
+            .background(TerigoTheme.background.ignoresSafeArea())
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                HStack(spacing: 12) {
+                    Button(action: presentDownloadOptions) {
+                        Image(systemName: offlineStatus.hasAnyAssets ? "checkmark.circle" : "arrow.down.circle")
+                            .font(.title2)
+                            .frame(width: 52, height: 52)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isDownloadDisabled)
+                    .accessibilityLabel("Offline download options")
+                    .accessibilityIdentifier("route-editor-open-offline-download")
+                    Button(action: startActivity) {
+                        Label("Start Activity", systemImage: "play.fill")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(route.routeCoordinates.count < 2)
+                    .accessibilityIdentifier("route-editor-start-activity")
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(.regularMaterial)
             }
             .accessibilityIdentifier("route-editor-screen-\(route.stravaRouteID)")
             .navigationTitle(route.name.trimmed.nilIfEmpty ?? "Route Details")
@@ -267,7 +294,7 @@ struct RouteEditorSheet: View {
     }
 
     private var actionsSection: some View {
-        Section("Actions") {
+        Section("Route tools") {
             if offlineStatus.hasAnyAssets {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Saved Offline")
@@ -292,12 +319,6 @@ struct RouteEditorSheet: View {
                 .padding(.vertical, 4)
             }
 
-            Button(action: startActivity) {
-                Label("Start Activity", systemImage: "figure.walk.motion")
-            }
-            .accessibilityIdentifier("route-editor-start-activity")
-            .disabled(route.routeCoordinates.count < 2)
-
             if let url = route.routeURL {
                 Link(destination: url) {
                     Label("Open in Strava", systemImage: "arrow.up.right.square")
@@ -318,12 +339,6 @@ struct RouteEditorSheet: View {
             }
             .disabled(route.startCoordinate == nil)
 
-            Button(action: presentDownloadOptions) {
-                Label(detailDownloadButtonTitle, systemImage: "arrow.down.circle")
-            }
-            .accessibilityIdentifier("route-editor-open-offline-download")
-            .disabled(isDownloadDisabled)
-
             if route.hasOfflineAssets {
                 Button(role: .destructive, action: removeOfflineDownload) {
                     Label("Remove Download", systemImage: "trash")
@@ -339,6 +354,36 @@ struct RouteEditorSheet: View {
             }
         }
         .id("route-editor-actions-\(route.stravaRouteID)-\(offlineStatusRevision)")
+    }
+
+    private var summarySection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(route.name)
+                    .font(.title2.weight(.bold))
+                    .fixedSize(horizontal: false, vertical: true)
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: 24) { summaryMetrics }
+                    VStack(alignment: .leading, spacing: 12) { summaryMetrics }
+                }
+            }
+            .padding(.vertical, 8)
+        }
+    }
+
+    @ViewBuilder
+    private var summaryMetrics: some View {
+        summaryMetric("Distance", value: RouteDisplayFormatter.distance(route.distanceMeters))
+        summaryMetric("Elevation gain", value: RouteDisplayFormatter.climb(route.elevationGainMeters))
+        summaryMetric("Est. time", value: RouteDisplayFormatter.duration(route.estimatedMovingTime))
+    }
+
+    private func summaryMetric(_ title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(value).font(.title3.weight(.semibold)).monospacedDigit()
+            Text(title).font(.caption).foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
     }
 
     private var overviewSection: some View {
@@ -370,9 +415,6 @@ struct RouteEditorSheet: View {
                 }
                 .buttonStyle(.plain)
             }
-            LabeledContent("Distance", value: RouteDisplayFormatter.distance(route.distanceMeters))
-            LabeledContent("Climb", value: RouteDisplayFormatter.climb(route.elevationGainMeters))
-            LabeledContent("Estimated Time", value: RouteDisplayFormatter.duration(route.estimatedMovingTime))
             LabeledContent("Updated", value: RouteDisplayFormatter.absoluteDate(route.primaryTimestamp))
         }
     }
@@ -742,8 +784,12 @@ struct RouteEditorSheet: View {
     }
 
     private func saveAndDismiss() {
-        try? modelContext.save()
-        dismiss()
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            bannerMessage = BannerMessage(text: "Your changes could not be saved. \(error.localizedDescription)", tone: .error)
+        }
     }
 
     private func deleteRoute() {
@@ -889,7 +935,7 @@ struct RouteEditorSheet: View {
         let hasSavedGPX = offlineStatus.hasGPX
         offlineDownloadSelection = RouteOfflineDownloadSelection(
             includesGPX: hasSavedGPX || downloadedStyles.isEmpty,
-            mapStyles: downloadedStyles.isEmpty ? (hasSavedGPX ? [] : [currentAppRouteMapStyle]) : downloadedStyles,
+            mapStyles: downloadedStyles.isEmpty ? (hasSavedGPX || !RouteVaultMapboxConfiguration.isConfigured ? [] : [currentAppRouteMapStyle]) : downloadedStyles,
             includesTerrain: offlineStatus.includesTerrain
         )
         isShowingDownloadOptions = true
@@ -1030,7 +1076,8 @@ struct RouteEditorSheet: View {
     }
 
     private func persistRouteChanges() {
-        try? modelContext.save()
+        do { try modelContext.save() }
+        catch { bannerMessage = BannerMessage(text: error.localizedDescription, tone: .error) }
     }
 
     @MainActor
@@ -2764,7 +2811,51 @@ private struct RouteMapSurface: View {
     }
 }
 
-struct RouteMapPreview: UIViewRepresentable {
+struct RouteMapPreview: View {
+    @AppStorage(AppRouteMapStyle.storageKey) private var appRouteMapStyleRawValue = AppRouteMapStyle.defaultValue.rawValue
+    @AppStorage(AppRouteMapPerspective.storageKey) private var appRouteMapPerspectiveRawValue = AppRouteMapPerspective.defaultValue.rawValue
+    let route: RouteRecord
+    let displayMode: RouteMapDisplayMode
+    let routeFitInsets: RouteMapFitInsets
+    let activeElevationSample: RouteElevationSample?
+    let lockedElevationSample: RouteElevationSample?
+    let userInterfaceStyle: UIUserInterfaceStyle
+    let fitTrigger: Int
+    let onRouteDistanceSelection: ((Double) -> Void)?
+
+    init(
+        route: RouteRecord,
+        displayMode: RouteMapDisplayMode = .embedded,
+        routeFitInsets: RouteMapFitInsets = .embedded,
+        activeElevationSample: RouteElevationSample? = nil,
+        lockedElevationSample: RouteElevationSample? = nil,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        fitTrigger: Int = 0,
+        onRouteDistanceSelection: ((Double) -> Void)? = nil
+    ) {
+        self.route = route
+        self.displayMode = displayMode
+        self.routeFitInsets = routeFitInsets
+        self.activeElevationSample = activeElevationSample
+        self.lockedElevationSample = lockedElevationSample
+        self.userInterfaceStyle = userInterfaceStyle
+        self.fitTrigger = fitTrigger
+        self.onRouteDistanceSelection = onRouteDistanceSelection
+    }
+
+    var body: some View {
+        if RouteVaultMapboxConfiguration.isConfigured {
+            RouteMapboxPreview(route: route, displayMode: displayMode, routeFitInsets: routeFitInsets,
+                               activeElevationSample: activeElevationSample, lockedElevationSample: lockedElevationSample,
+                               userInterfaceStyle: userInterfaceStyle, fitTrigger: fitTrigger,
+                               onRouteDistanceSelection: onRouteDistanceSelection)
+        } else {
+            TerigoNativeMap(tracks: [route.routeCoordinates], fitRequest: fitTrigger)
+        }
+    }
+}
+
+private struct RouteMapboxPreview: UIViewRepresentable {
     @AppStorage(AppRouteMapStyle.storageKey) private var appRouteMapStyleRawValue = AppRouteMapStyle.defaultValue.rawValue
     @AppStorage(AppRouteMapPerspective.storageKey) private var appRouteMapPerspectiveRawValue = AppRouteMapPerspective.defaultValue.rawValue
     let route: RouteRecord

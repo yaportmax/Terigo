@@ -8,6 +8,7 @@ struct RouteVaultRootScreen: View {
         var id: Int { routeID }
     }
 
+    @AppStorage("terigo.localLibraryEnabled") private var localLibraryEnabled = false
     @AppStorage(RouteTrackingActivityStore.activeRouteIDDefaultsKey) private var activeRouteTrackingRouteID = 0
     @Environment(\.colorScheme) private var colorScheme
     @Query(sort: [SortDescriptor(\RouteRecord.syncedAt, order: .reverse)]) private var routes: [RouteRecord]
@@ -19,7 +20,7 @@ struct RouteVaultRootScreen: View {
             if accountManager.isRestoringSession && !accountManager.didRestoreInitialState {
                 ProgressView("Restoring Terigo…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if accountManager.isAuthenticated {
+            } else if accountManager.isAuthenticated || localLibraryEnabled || !routes.isEmpty {
                 RouteLibraryScreen()
                     .environment(accountManager)
             } else {
@@ -64,7 +65,7 @@ struct RouteVaultRootScreen: View {
     }
 
     private var backgroundColor: Color {
-        colorScheme == .dark ? .black : Color(red: 0.95, green: 0.94, blue: 0.90)
+        TerigoTheme.background
     }
 
     private func scheduleStatusBannerDismiss(for value: String?) {
@@ -119,103 +120,97 @@ struct RouteVaultRootScreen: View {
 
 private struct RouteVaultWelcomeScreen: View {
     @Environment(RouteVaultAccountManager.self) private var accountManager
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
+    @AppStorage("terigo.localLibraryEnabled") private var localLibraryEnabled = false
     @State private var isShowingAccessCodeSheet = false
 
     var body: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack {
-                    Spacer(minLength: max(geometry.safeAreaInsets.top, 48))
+        ScrollView {
+            VStack(alignment: .leading, spacing: 32) {
+                Image("TerigoLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 170, alignment: .leading)
+                    .accessibilityLabel("Terigo")
 
-                    VStack(alignment: .leading, spacing: 22) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Image("TerigoLogo")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxWidth: 260, alignment: .leading)
-                                .accessibilityLabel("Terigo")
+                ZStack {
+                    RoundedRectangle(cornerRadius: 32)
+                        .fill(TerigoTheme.accent.opacity(0.08))
+                    Image(systemName: "mountain.2")
+                        .font(.system(size: 96, weight: .ultraLight))
+                        .foregroundStyle(TerigoTheme.accent)
+                    Image(systemName: "location.north.circle.fill")
+                        .font(.system(size: 42))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(TerigoTheme.accent, TerigoTheme.surface)
+                        .offset(x: 100, y: 50)
+                }
+                .frame(height: 210)
+                .accessibilityHidden(true)
 
-                            Text("Connect to Strava to access Terigo.")
-                                .font(.title3.weight(.semibold))
-                                .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("Good routes.\nGreat days out.")
+                        .font(.largeTitle.weight(.bold))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Keep your routes together. Find your next adventure, save it offline, and follow it outside.")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                VStack(spacing: 12) {
+                    Button {
+                        Task { await accountManager.connectWithStrava() }
+                    } label: {
+                        HStack(spacing: 10) {
+                            if accountManager.isConnecting { ProgressView().tint(.white) }
+                            Text(accountManager.isConnecting ? "Connecting…" : "Connect with Strava")
+                                .font(.headline)
                         }
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(TerigoTheme.accent)
+                    .disabled(accountManager.isConnecting || accountManager.isRestoringSession)
 
-                        Button {
-                            Task { await accountManager.connectWithStrava() }
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: "figure.run")
-                                Text(accountManager.isConnecting ? "Connecting…" : "Connect With Strava")
-                                    .fontWeight(.semibold)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Color.orange)
-                        .disabled(accountManager.isConnecting || accountManager.isRestoringSession)
+                    Button {
+                        localLibraryEnabled = true
+                    } label: {
+                        Text("Continue with GPX files")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("welcome-continue-local")
 
-                        Button {
-                            isShowingAccessCodeSheet = true
-                        } label: {
-                            Text("Enter Access Code")
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(accountManager.isConnecting || accountManager.isRestoringSession)
-
-                        Text(helperMessage)
+                    if let message = accountManager.errorMessage ?? accountManager.statusMessage {
+                        Text(message)
                             .font(.footnote)
-                            .foregroundStyle(helperUsesErrorTone ? Color.red.opacity(0.95) : .secondary)
+                            .foregroundStyle(accountManager.errorMessage == nil ? Color.secondary : Color.red)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .frame(maxWidth: 440, alignment: .leading)
-                    .padding(24)
-                    .background(cardFill)
-                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                    .padding(.horizontal, 24)
-
-                    Spacer(minLength: 32)
+                    Button("Have an access code?") { isShowingAccessCodeSheet = true }
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(minHeight: 44)
                 }
-                .frame(minHeight: geometry.size.height)
-                .padding(.bottom, 32)
             }
+            .frame(maxWidth: 460)
+            .padding(.horizontal, 28)
+            .padding(.vertical, 36)
+            .frame(maxWidth: .infinity)
         }
+        .background(TerigoTheme.background.ignoresSafeArea())
         .sheet(isPresented: $isShowingAccessCodeSheet) {
             NavigationStack {
-                RouteVaultAccessCodeSheet { accessCode in
-                    accountManager.activateReviewDemo(using: modelContext, accessCode: accessCode)
-                    if accountManager.isAuthenticated {
-                        isShowingAccessCodeSheet = false
-                    }
+                RouteVaultAccessCodeSheet { code in
+                    accountManager.activateReviewDemo(using: modelContext, accessCode: code)
+                    if accountManager.isAuthenticated { isShowingAccessCodeSheet = false }
                 }
                 .environment(accountManager)
             }
-            .presentationDetents([.fraction(0.34)])
+            .presentationDetents([.medium, .large])
         }
-    }
-
-    private var cardFill: Color {
-        colorScheme == .dark ? Color.white.opacity(0.06) : Color.white.opacity(0.94)
-    }
-
-    private var helperMessage: String {
-        if let errorMessage = accountManager.errorMessage?.trimmed.nilIfEmpty {
-            return errorMessage
-        }
-
-        if let statusMessage = accountManager.statusMessage?.trimmed.nilIfEmpty {
-            return statusMessage
-        }
-
-        return accountManager.backendStatusText
-    }
-
-    private var helperUsesErrorTone: Bool {
-        accountManager.errorMessage?.trimmed.nilIfEmpty != nil
     }
 }
 

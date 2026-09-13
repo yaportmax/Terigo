@@ -25,3 +25,5 @@ Configuration/Secrets.xcconfig
 Configuration/DeveloperSigning.xcconfig
 supabase/.local-backend/
 supabase/.temp/
+
+build/

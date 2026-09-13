@@ -56,29 +56,41 @@ struct ActivitiesScreen: View {
                 VStack(alignment: .leading, spacing: 18) {
                     bannerStack
                     connectionSection
-                    activitiesTopActions
-
-                    if model.isConnected {
+                    if model.isConnected || !activities.isEmpty {
                         activitiesTab
                     }
                 }
-                .padding(20)
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 24)
             }
-        }
-        .accessibilityIdentifier("activities-screen")
-        .background(Color.black.ignoresSafeArea())
-        .navigationTitle("Activities")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
-            if showsDismissButton {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Close") {
-                        dismiss()
+            .scrollDismissesKeyboard(.interactively)
+            .refreshable { await model.syncActivities(using: modelContext) }
+            .background(TerigoTheme.background.ignoresSafeArea())
+            .navigationTitle("Activities")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { isShowingSettingsSheet = true } label: {
+                        Label("Activities settings", systemImage: "ellipsis")
+                    }
+                    .accessibilityIdentifier("activities-settings-button")
+                }
+                if showsDismissButton {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Close") { dismiss() }
                     }
                 }
             }
-
-        })
+            .navigationDestination(for: String.self) { activityKey in
+                if let activity = activities.first(where: { $0.activityKey == activityKey }) {
+                    DeferredActivityDetailScreen(activity: activity, model: model)
+                } else {
+                    ContentUnavailableView("Activity Unavailable", systemImage: "exclamationmark.triangle",
+                                           description: Text("This activity is no longer saved on this device."))
+                }
+            }
+        }
+        .accessibilityIdentifier("activities-screen")
         .sheet(isPresented: $isShowingSettingsSheet) {
             NavigationStack {
                 ActivitiesSettingsSheet(
@@ -88,12 +100,15 @@ struct ActivitiesScreen: View {
                     isConnecting: model.isConnecting,
                     isImportingLocalActivities: model.isImportingLocalActivities,
                     onSyncActivities: { Task { await model.syncActivities(using: modelContext) } },
-                    onImportGPXActivity: { isShowingGPXImporter = true },
+                    onImportGPXActivity: {
+                        isShowingSettingsSheet = false
+                        isShowingGPXImporter = true
+                    },
                     onReconnectStrava: { Task { await model.connect() } },
                     onDisconnectStrava: { model.disconnect() }
                 )
             }
-            .presentationDetents([.medium])
+            .presentationDetents([.large])
         }
         .task {
             await Task.yield()
@@ -117,18 +132,6 @@ struct ActivitiesScreen: View {
         .onDisappear {
             statusBannerDismissTask?.cancel()
             statusBannerDismissTask = nil
-        }
-        .navigationDestination(for: String.self) { activityKey in
-            if let activity = activities.first(where: { $0.activityKey == activityKey }) {
-                DeferredActivityDetailScreen(activity: activity, model: model)
-            } else {
-                ContentUnavailableView(
-                    "Activity Unavailable",
-                    systemImage: "exclamationmark.triangle",
-                    description: Text("This activity is no longer available locally.")
-                )
-                .background(Color.black.ignoresSafeArea())
-            }
         }
     }
 
@@ -203,24 +206,6 @@ struct ActivitiesScreen: View {
                     Task { await model.connect() }
                 }
             )
-        }
-    }
-
-    private var activitiesTopActions: some View {
-        HStack {
-            Spacer()
-
-            Button {
-                isShowingSettingsSheet = true
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 20, weight: .semibold))
-                    .frame(width: 36, height: 36)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Activities settings")
-            .accessibilityIdentifier("activities-settings-button")
         }
     }
 
@@ -322,7 +307,7 @@ private struct ActivitiesSettingsSheet: View {
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .background(Color.black.ignoresSafeArea())
+        .background(TerigoTheme.background.ignoresSafeArea())
         .navigationTitle("Activities Settings")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -372,7 +357,7 @@ private struct ActivityDetailLoadingScreen: View {
     var body: some View {
         VStack(spacing: 18) {
             ProgressView()
-                .tint(.white)
+                .tint(TerigoTheme.accent)
             Text("Loading \(title)…")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -380,7 +365,7 @@ private struct ActivityDetailLoadingScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(24)
-        .background(Color.black.ignoresSafeArea())
+        .background(TerigoTheme.background.ignoresSafeArea())
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -439,7 +424,7 @@ private struct ActivityConnectionCard: View {
         VStack(alignment: .leading, spacing: 14) {
             Text(title)
                 .font(.title3.weight(.bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             Text(message)
                 .font(.subheadline)
@@ -456,7 +441,7 @@ private struct ActivityConnectionCard: View {
             .buttonStyle(.plain)
         }
         .padding(18)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 }
 
@@ -471,7 +456,7 @@ private struct ActivitySearchField: View {
             TextField("Search activities, places, sports", text: $text)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             if !text.isEmpty {
                 Button {
@@ -485,7 +470,7 @@ private struct ActivitySearchField: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 
@@ -654,7 +639,7 @@ private struct ActivitiesSortSheet: View {
                     HStack {
                         Text("Sort Order")
                             .font(.headline.weight(.semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
 
                         Spacer(minLength: 0)
 
@@ -714,11 +699,11 @@ private struct ActivitiesSortSheet: View {
                     }
                 }
                 .padding(18)
-                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             }
             .padding(20)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(TerigoTheme.background.ignoresSafeArea())
         .navigationTitle("Sort Order")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("activities-sort-screen")
@@ -770,10 +755,10 @@ private struct ActivitiesSortCriterionRow: View {
                 } label: {
                     HStack(spacing: 10) {
                         AppIconGlyph(name: criterion.option.symbolName, size: 14, weight: .semibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         Text(criterion.option.title)
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         Spacer(minLength: 0)
                         Image(systemName: "chevron.down")
                             .font(.caption.weight(.semibold))
@@ -793,7 +778,7 @@ private struct ActivitiesSortCriterionRow: View {
                         Text(criterion.direction.title)
                             .font(.subheadline.weight(.semibold))
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
                     .activitiesControlSurface(isActive: false, cornerRadius: 18)
@@ -809,7 +794,7 @@ private struct ActivitiesSortCriterionRow: View {
             }
         }
         .padding(14)
-        .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 }
 
@@ -824,7 +809,7 @@ private struct ActivitiesSortReorderButton: View {
                 .font(.caption.weight(.bold))
                 .foregroundStyle(isEnabled ? .white : .secondary.opacity(0.4))
                 .frame(width: 30, height: 30)
-                .background(Color.white.opacity(0.05), in: Circle())
+                .background(Color.primary.opacity(0.05), in: Circle())
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
@@ -871,7 +856,7 @@ private struct ActivitiesFiltersSheet: View {
                     HStack {
                         Text("Activity")
                             .font(.headline.weight(.semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         Spacer(minLength: 0)
                         if model.hasActiveFilters {
                             Button("Reset") {
@@ -899,12 +884,12 @@ private struct ActivitiesFiltersSheet: View {
                     }
                 }
                 .padding(18)
-                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Source")
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     LazyVGrid(columns: rangeFieldColumns, spacing: 10) {
                         ForEach(ActivitySourceKind.allCases, id: \.rawValue) { source in
@@ -919,12 +904,12 @@ private struct ActivitiesFiltersSheet: View {
                     }
                 }
                 .padding(18)
-                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Privacy")
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     HStack(spacing: 10) {
                         ForEach(ActivityPrivacyFilter.allCases) { filter in
@@ -939,12 +924,12 @@ private struct ActivitiesFiltersSheet: View {
                     }
                 }
                 .padding(18)
-                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Ranges")
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     ActivitiesRangeEditor(
                         title: "Distance",
@@ -963,11 +948,11 @@ private struct ActivitiesFiltersSheet: View {
                     )
                 }
                 .padding(18)
-                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             }
             .padding(20)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(TerigoTheme.background.ignoresSafeArea())
         .navigationTitle("Filters")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("activities-filters-screen")
@@ -1099,7 +1084,7 @@ private struct ActivitiesSelectionPill: View {
 
                 Text(title)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Spacer(minLength: 0)
@@ -1155,10 +1140,10 @@ private struct ActivitiesRangeField: View {
                 .keyboardType(.decimalPad)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 11)
-                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
     }
 }
@@ -1229,13 +1214,13 @@ private struct ActivityMiniMetric: View {
 
             Text(value)
                 .font(.headline.weight(.bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 
@@ -1331,13 +1316,13 @@ private struct ActivityCardRow: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
                 AppIconGlyph(name: activity.sportSymbolName, size: 16)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .frame(width: 28, height: 28)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(activity.name)
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .multilineTextAlignment(.leading)
 
                     Text(activity.displayLocation.nilIfEmpty ?? activity.startCoordinate?.formattedLabel ?? "Location unavailable")
@@ -1351,7 +1336,7 @@ private struct ActivityCardRow: View {
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(RouteDisplayFormatter.calendarDate(activity.startDate))
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     Text(activity.sourceKind == .strava ? "Strava" : "Local")
                         .font(.caption.weight(.semibold))
@@ -1384,7 +1369,7 @@ private struct ActivityCardRow: View {
 
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: density.cardCornerRadius, style: .continuous)
-            .fill(Color.white.opacity(0.04))
+            .fill(TerigoTheme.surface)
     }
 
     private var cardOutline: some View {
@@ -1402,13 +1387,13 @@ private struct ExpandedActivityCardRow: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 12) {
                 AppIconGlyph(name: activity.sportSymbolName, size: 18)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .frame(width: 30, height: 30)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(activity.name)
                         .font(.system(.title3, design: .rounded, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .multilineTextAlignment(.leading)
 
                     Text(activity.displayLocation.nilIfEmpty ?? activity.startCoordinate?.formattedLabel ?? "Location unavailable")
@@ -1422,7 +1407,7 @@ private struct ExpandedActivityCardRow: View {
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(RouteDisplayFormatter.calendarDate(activity.startDate))
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     Text(activity.sourceKind == .strava ? "Strava" : "Local")
                         .font(.caption.weight(.semibold))
@@ -1462,7 +1447,7 @@ private struct ExpandedActivityCardRow: View {
 
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: density.cardCornerRadius, style: .continuous)
-            .fill(Color.white.opacity(0.04))
+            .fill(TerigoTheme.surface)
     }
 
     private var cardOutline: some View {
@@ -1498,10 +1483,10 @@ private struct ActivityMetricChip: View {
                 .lineLimit(1)
         }
         .font(.caption.weight(.semibold))
-        .foregroundStyle(.white)
+        .foregroundStyle(.primary)
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(Color.white.opacity(0.07), in: Capsule())
+        .background(Color.primary.opacity(0.07), in: Capsule())
     }
 }
 
@@ -1562,14 +1547,14 @@ private struct ActivityDetailScreen: View {
                     detailCard(title: "Description") {
                         Text(description)
                             .font(.subheadline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
             }
             .padding(20)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(TerigoTheme.background.ignoresSafeArea())
         .navigationTitle(activity.name)
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("activity-detail-screen-\(activity.activityKey)")
@@ -2036,12 +2021,12 @@ private struct ActivityDetailScreen: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             content()
         }
         .padding(16)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private func detailRow(_ title: String, _ value: String) -> some View {
@@ -2054,7 +2039,7 @@ private struct ActivityDetailScreen: View {
 
             Text(value)
                 .font(.subheadline)
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .multilineTextAlignment(.trailing)
         }
     }
@@ -2079,13 +2064,13 @@ private struct ActivityDetailScreen: View {
 
             Text(title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 13)
-        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
@@ -2115,7 +2100,7 @@ private struct ActivityDetailMetricGrid: View {
 
                     Text(item.value)
                         .font(.subheadline.weight(.bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
 
@@ -2127,7 +2112,7 @@ private struct ActivityDetailMetricGrid: View {
                 .frame(maxWidth: .infinity, minHeight: 68, alignment: .topLeading)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
         }
     }
@@ -2136,7 +2121,7 @@ private struct ActivityDetailMetricGrid: View {
 private struct ActivityRouteMapPlaceholderCard: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 28, style: .continuous)
-            .fill(Color.white.opacity(0.04))
+            .fill(TerigoTheme.surface)
             .overlay {
                 ProgressView()
                     .tint(.white.opacity(0.8))
@@ -2153,10 +2138,11 @@ private struct ActivityRouteMapCard: View {
         ZStack(alignment: .topTrailing) {
             Group {
                 if isMapVisible {
-                    ActivityRouteMapViewRepresentable(
-                        activity: activity,
-                        userInterfaceStyle: userInterfaceStyle
-                    )
+                    if RouteVaultMapboxConfiguration.isConfigured {
+                        ActivityRouteMapViewRepresentable(activity: activity, userInterfaceStyle: userInterfaceStyle)
+                    } else {
+                        TerigoNativeMap(tracks: [activity.mapDisplayCoordinates(maximumPointCount: 360)])
+                    }
                 } else {
                     ActivityRouteMapPlaceholder(activity: activity)
                 }
@@ -2204,7 +2190,7 @@ private struct ActivityRouteMapPlaceholder: View {
 
                 Text("Loading route map")
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
 
                 Text(RouteDisplayFormatter.distance(activity.distanceMeters))
                     .font(.subheadline)
@@ -2247,11 +2233,11 @@ private struct ActivityExplorerLegend: View {
             legendRow(color: Color(red: 1.0, green: 0.58, blue: 0.18), title: "Visited")
             legendRow(color: Color(red: 0.22, green: 0.82, blue: 1.0), title: "Cluster")
             legendRow(color: Color(red: 1.0, green: 0.84, blue: 0.28), title: "Square")
-            legendRow(color: Color.white, title: "Selected")
+            legendRow(color: Color.primary, title: "Selected")
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 9)
-        .background(.black.opacity(0.68), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     private func legendRow(color: Color, title: String) -> some View {
@@ -2262,7 +2248,7 @@ private struct ActivityExplorerLegend: View {
 
             Text(title)
                 .font(.caption2.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
         }
     }
 }
