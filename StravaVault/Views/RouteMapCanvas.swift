@@ -215,7 +215,8 @@ struct RouteMapBrowseCanvas<Controls: View>: View {
                     },
                     onSelectMarker: { id in
                         if let group = markerGroups.first(where: { $0.id == id }) { onSelectMarkerGroup(group) }
-                    }
+                    },
+                    onTapCoordinate: { _ in onTapMapBackground() }
                 )
             }
 
@@ -901,6 +902,7 @@ struct TerigoNativeMap: View {
         let id: String
         let title: String
         let coordinate: CLLocationCoordinate2D
+        var isElevationSample = false
     }
     let tracks: [[CLLocationCoordinate2D]]
     var markers: [Marker] = []
@@ -908,50 +910,91 @@ struct TerigoNativeMap: View {
     var centerRequest: Int = 0
     var fitRequest: Int = 0
     var followCoordinate: CLLocationCoordinate2D? = nil
+    var fitInsets: RouteMapFitInsets = .embedded
     var onRegionChange: (MKCoordinateRegion) -> Void = { _ in }
     var onSelectMarker: (String) -> Void = { _ in }
     var onUserInteraction: () -> Void = {}
+    var onTapCoordinate: (CLLocationCoordinate2D) -> Void = { _ in }
     @AppStorage(AppRouteMapStyle.storageKey) private var styleRawValue = AppRouteMapStyle.defaultValue.rawValue
+    @AppStorage(AppRouteMapPerspective.storageKey) private var perspectiveRawValue = AppRouteMapPerspective.defaultValue.rawValue
+    @Environment(\.colorScheme) private var colorScheme
     @State private var position: MapCameraPosition = .automatic
+    @State private var lastCamera: MapCamera?
+    @State private var didApplyPerspective = false
 
     var body: some View {
-        Map(position: $position) {
-            ForEach(tracks.indices, id: \.self) { index in
-                MapPolyline(coordinates: tracks[index])
-                    .stroke(TerigoTheme.accent, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
-            }
-            ForEach(markers) { marker in
-                Annotation(marker.title, coordinate: marker.coordinate) {
-                    Button { onSelectMarker(marker.id) } label: {
-                        Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
-                            .font(.headline)
-                            .frame(width: 44, height: 44)
-                            .foregroundStyle(.white)
-                            .background(TerigoTheme.accent, in: Circle())
-                            .overlay(Circle().stroke(.white, lineWidth: 2))
+        MapReader { proxy in
+            Map(position: $position) {
+                ForEach(tracks.indices, id: \.self) { index in
+                    MapPolyline(coordinates: tracks[index])
+                        .stroke(TerigoTheme.accent, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+                }
+                ForEach(markers) { marker in
+                    Annotation(marker.title, coordinate: marker.coordinate) {
+                        if marker.isElevationSample {
+                            Circle().fill(TerigoTheme.accent)
+                                .frame(width: 16, height: 16)
+                                .overlay(Circle().stroke(.white, lineWidth: 3))
+                                .accessibilityLabel(marker.title)
+                        } else {
+                            Button { onSelectMarker(marker.id) } label: {
+                                Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
+                                    .font(.headline)
+                                    .frame(width: 44, height: 44)
+                                    .foregroundStyle(.white)
+                                    .background(TerigoTheme.accent, in: Circle())
+                                    .overlay(Circle().stroke(.white, lineWidth: 2))
+                            }
+                            .accessibilityLabel(marker.title)
+                        }
                     }
-                    .accessibilityLabel(marker.title)
+                }
+                UserAnnotation()
+            }
+            .mapStyle(mapStyle)
+            .safeAreaPadding(.top, fitInsets.top)
+            .safeAreaPadding(.bottom, fitInsets.bottom)
+            .environment(\.colorScheme, resolvedStyle == .dark ? .dark : colorScheme)
+            .onTapGesture { point in
+                // Annotation buttons own their taps; a background tap clears a selection.
+                let tappedMarker = markers.contains { marker in
+                    guard let screenPoint = proxy.convert(marker.coordinate, to: .local) else { return false }
+                    return hypot(screenPoint.x - point.x, screenPoint.y - point.y) < 28
+                }
+                if !tappedMarker, let coordinate = proxy.convert(point, from: .local) {
+                    onTapCoordinate(coordinate)
                 }
             }
-            UserAnnotation()
-        }
-        .mapStyle(mapStyle)
-        .onAppear { if let requestedRegion { position = .region(requestedRegion) } }
-        .onChange(of: regionKey) { _, _ in
-            if let requestedRegion { position = .region(requestedRegion) }
-        }
-        .onChange(of: centerRequest) { _, _ in position = .userLocation(fallback: .automatic) }
-        .onChange(of: fitRequest) { _, _ in position = .automatic }
-        .onChange(of: followCoordinate?.latitude) { _, _ in followLocation() }
-        .onChange(of: followCoordinate?.longitude) { _, _ in followLocation() }
-        .onMapCameraChange(frequency: .onEnd) { context in
-            onRegionChange(context.region)
-            if position.positionedByUser { onUserInteraction() }
+            .onAppear {
+                if let requestedRegion { position = .region(requestedRegion) }
+                if followCoordinate != nil { followLocation() }
+            }
+            .onChange(of: regionKey) { _, _ in
+                if let requestedRegion { position = .region(requestedRegion) }
+            }
+            .onChange(of: centerRequest) { _, _ in position = .userLocation(fallback: .automatic) }
+            .onChange(of: fitRequest) { _, _ in position = .automatic }
+            .onChange(of: followCoordinate?.latitude) { _, _ in followLocation() }
+            .onChange(of: followCoordinate?.longitude) { _, _ in followLocation() }
+            .onChange(of: perspectiveRawValue) { _, _ in applyPerspective() }
+            .onMapCameraChange(frequency: .onEnd) { context in
+                lastCamera = context.camera
+                onRegionChange(context.region)
+                if position.positionedByUser { onUserInteraction() }
+                if !didApplyPerspective {
+                    didApplyPerspective = true
+                    if isThreeDimensional { applyPerspective() }
+                }
+            }
         }
     }
 
+    private var resolvedStyle: AppRouteMapStyle { AppRouteMapStyle.resolved(from: styleRawValue) }
+    private var isThreeDimensional: Bool {
+        (AppRouteMapPerspective(rawValue: perspectiveRawValue) ?? .defaultValue).isThreeDimensional
+    }
     private var mapStyle: MapKit.MapStyle {
-        switch AppRouteMapStyle.resolved(from: styleRawValue) {
+        switch resolvedStyle {
         case .satellite: return .imagery(elevation: .realistic)
         case .hybrid: return .hybrid(elevation: .realistic)
         default: return .standard(elevation: .realistic, pointsOfInterest: .excludingAll)
@@ -961,9 +1004,15 @@ struct TerigoNativeMap: View {
         guard let region = requestedRegion else { return "automatic" }
         return "\(region.center.latitude)-\(region.center.longitude)-\(region.span.latitudeDelta)-\(region.span.longitudeDelta)"
     }
+    private func applyPerspective() {
+        guard var camera = lastCamera else { return }
+        camera.pitch = isThreeDimensional ? 60 : 0
+        position = .camera(camera)
+    }
     private func followLocation() {
         if let followCoordinate {
-            position = .region(MKCoordinateRegion(center: followCoordinate, latitudinalMeters: 1400, longitudinalMeters: 1400))
+            position = .camera(MapCamera(centerCoordinate: followCoordinate, distance: 1400,
+                                         pitch: isThreeDimensional ? 60 : 0))
         }
     }
 }

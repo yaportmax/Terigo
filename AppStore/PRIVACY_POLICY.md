@@ -24,7 +24,7 @@ Terigo's hosted service verifies every account directly with Strava. It does not
 
 - When you connect Strava, the app exchanges authorization data with Strava and the configured Strava auth broker so it can import the routes and activities you approved.
 - If you choose to upload an activity, the app sends the selected GPX or activity data back to Strava.
-- When you inspect, share, follow, or download routes, the app may send coordinates or route metadata to providers that power those features, including Apple services for search and geocoding, Mapbox for map tiles, terrain, and offline regions, Supabase for account-backed list sharing, Open-Meteo for route-start weather forecasts, and Overpass or OpenStreetMap services for route surface classification.
+- When you inspect, share, follow, or download routes, the app may send coordinates or route metadata to providers that power those features, including Apple services for maps, search, and geocoding, Mapbox for map tiles, terrain, and offline regions, Supabase for account-backed list sharing, Open-Meteo for route-start weather forecasts, and Overpass or OpenStreetMap services for route surface classification.
 
 ## Location and notifications
 

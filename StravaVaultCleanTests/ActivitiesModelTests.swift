@@ -1,8 +1,37 @@
 import XCTest
+import MapKit
+import SwiftData
 @testable import StravaVault
 
 @MainActor
 final class ActivitiesModelTests: XCTestCase {
+    func testMapAreaContainsRoutesAcrossTheDateLine() {
+        let region = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 0, longitude: 179),
+                                        span: MKCoordinateSpan(latitudeDelta: 10, longitudeDelta: 8))
+        XCTAssertTrue(region.contains(CLLocationCoordinate2D(latitude: 1, longitude: -179)))
+        XCTAssertFalse(region.contains(CLLocationCoordinate2D(latitude: 1, longitude: -170)))
+        XCTAssertFalse(region.contains(CLLocationCoordinate2D(latitude: 20, longitude: 179)))
+    }
+
+    func testOfflineCleanupWorksAfterTheRouteRecordIsDeleted() throws {
+        let container = try ModelContainer(for: RouteRecord.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+        let directory = try makeOfflineTestDirectory()
+        let service = RouteOfflineAssetService(baseDirectoryOverride: directory)
+        let route = makeRoute(id: 991, typeCode: 2, subTypeCode: nil)
+        context.insert(route)
+        let urls = try writeOfflineBundle(for: route, baseDirectory: directory, gpxName: "deleted.gpx",
+                                          metadataName: "deleted-offline-mapbox.json", tileRegionID: "deleted-region", approximateByteCount: 200)
+        try context.save()
+        let plan = try service.removalPlan(for: route)
+        context.delete(route)
+        try context.save()
+        try service.removeOfflineAssets(using: plan)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<RouteRecord>()), 0)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: urls.gpx.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: urls.metadata.path))
+    }
+
     func testBackendCannotFindHostMessageNamesConfiguredHost() {
         let error = RouteVaultBackendService.BackendError.transport(
             URLError(.cannotFindHost),

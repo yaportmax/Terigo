@@ -6,9 +6,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import UIKit
 
-let routeLibraryHeaderRowHeight: CGFloat = 40
-
-private struct RouteLibraryScreen: View {
+struct RouteLibraryScreen: View {
     private enum Tab: Hashable {
         case routes, explore, lists, activities
     }

@@ -1226,33 +1226,69 @@ enum AppUITestSupport {
 @main
 struct StravaVaultApp: App {
     @AppStorage(AppAppearance.storageKey) private var appAppearanceRawValue = AppAppearance.system.rawValue
-
-    let modelContainer: ModelContainer
+    @State private var modelContainer: ModelContainer?
+    @State private var storageError: String?
 
     init() {
+        AppUITestSupport.prepareForLaunch()
+        RouteVaultMapboxConfiguration.configure()
         do {
-            AppUITestSupport.prepareForLaunch()
-            RouteVaultMapboxConfiguration.configure()
-            let configuration = AppUITestSupport.makeModelConfiguration()
-            modelContainer = try ModelContainer(
-                for: RouteRecord.self,
-                ActivityRecord.self,
-                RouteList.self,
-                RouteStartHub.self,
-                configurations: configuration
-            )
-            AppUITestSupport.seedDemoDataIfNeeded(in: modelContainer)
+            if AppUITestSupport.isEnabled && ProcessInfo.processInfo.arguments.contains("--ui-test-storage-failure") {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            _modelContainer = State(initialValue: try Self.openModelContainer())
+            _storageError = State(initialValue: nil)
         } catch {
-            fatalError("Failed to create model container: \(error)")
+            _modelContainer = State(initialValue: nil)
+            _storageError = State(initialValue: error.localizedDescription)
         }
     }
 
     var body: some Scene {
         WindowGroup {
-            RouteVaultRootScreen()
-                .preferredColorScheme(appAppearance.colorScheme)
+            Group {
+                if let modelContainer {
+                    RouteVaultRootScreen()
+                        .modelContainer(modelContainer)
+                } else {
+                    ContentUnavailableView {
+                        Label("Your library couldn’t open", systemImage: "externaldrive.badge.exclamationmark")
+                    } description: {
+                        Text("Try opening it again. If this continues, contact support for help recovering your saved routes.")
+                        if let storageError {
+                            Text(storageError).font(.footnote)
+                        }
+                    } actions: {
+                        Button("Try Again", action: retryOpeningLibrary)
+                            .buttonStyle(.borderedProminent)
+                            .accessibilityIdentifier("library-retry-open")
+                        Link("Contact Support", destination: URL(string: "mailto:yaportmax@gmail.com")!)
+                    }
+                    .background(TerigoTheme.background.ignoresSafeArea())
+                    .accessibilityIdentifier("library-storage-error")
+                }
+            }
+            .tint(TerigoTheme.accent)
+            .preferredColorScheme(appAppearance.colorScheme)
         }
-        .modelContainer(modelContainer)
+    }
+
+    private static func openModelContainer() throws -> ModelContainer {
+        let container = try ModelContainer(
+            for: RouteRecord.self, ActivityRecord.self, RouteList.self, RouteStartHub.self,
+            configurations: AppUITestSupport.makeModelConfiguration()
+        )
+        AppUITestSupport.seedDemoDataIfNeeded(in: container)
+        return container
+    }
+
+    private func retryOpeningLibrary() {
+        do {
+            modelContainer = try Self.openModelContainer()
+            storageError = nil
+        } catch {
+            storageError = error.localizedDescription
+        }
     }
 
     private var appAppearance: AppAppearance {

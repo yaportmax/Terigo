@@ -8,6 +8,16 @@ final class StravaVaultCleanUITests: XCTestCase {
     func testVisualTourLight() throws { try visualTour(appearance: "light") }
     func testVisualTourDark() throws { try visualTour(appearance: "dark") }
 
+    func testLibraryOpenFailureCanRetry() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-seed-demo", "--ui-test-storage-failure"]
+        app.launch()
+        XCTAssertTrue(app.buttons["library-retry-open"].waitForExistence(timeout: 10))
+        capture("library-storage-recovery", app)
+        tap(app.buttons["library-retry-open"])
+        XCTAssertTrue(app.buttons["route-row-4001"].waitForExistence(timeout: 15))
+    }
+
     func testSearchAndNavigationPreserveLibrary() throws {
         let app = launch()
         let search = app.textFields["route-library-search"]

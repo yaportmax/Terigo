@@ -129,7 +129,12 @@ struct RouteMapBrowseSheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        GeometryReader { geometry in
+            let isWide = geometry.size.width > geometry.size.height
+            let layout = isWide
+                ? AnyLayout(HStackLayout(alignment: .top, spacing: 16))
+                : AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            layout {
             VStack(alignment: .leading, spacing: 12) {
                 RouteMapBrowseCanvas(
                     requestedRegion: $requestedRegion,
@@ -173,11 +178,11 @@ struct RouteMapBrowseSheet: View {
                         }
                     }
                 }
-                .frame(height: 300)
+                .frame(height: isWide ? max(120, geometry.size.height - 125) : min(360, geometry.size.height * 0.48))
                 .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
 
                 CompactMapToggleChip(
-                    title: "Map Filter",
+                    title: "Only routes in this area",
                     symbolName: "scope",
                     isOn: visibleAreaFilterBinding
                 )
@@ -189,14 +194,18 @@ struct RouteMapBrowseSheet: View {
                 }
             }
 
+            .frame(maxWidth: .infinity)
+
             mapBrowseRouteList
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(20)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        }
         .id("map-browse-\(appMeasurementSystemRawValue)")
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
-        .navigationTitle("Map")
+        .background(TerigoTheme.background.ignoresSafeArea())
+        .navigationTitle("Explore")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("map-browse-screen")
         .fullScreenCover(isPresented: $isShowingFullScreenMap) {

@@ -2850,7 +2850,24 @@ struct RouteMapPreview: View {
                                userInterfaceStyle: userInterfaceStyle, fitTrigger: fitTrigger,
                                onRouteDistanceSelection: onRouteDistanceSelection)
         } else {
-            TerigoNativeMap(tracks: [route.routeCoordinates], fitRequest: fitTrigger)
+            TerigoNativeMap(
+                tracks: [route.routeCoordinates],
+                markers: [lockedElevationSample, activeElevationSample].compactMap { $0 }.map { sample in
+                    TerigoNativeMap.Marker(id: sample.id, title: RouteDisplayFormatter.altitude(sample.elevationMeters),
+                                           coordinate: sample.coordinate, isElevationSample: true)
+                }.reduce(into: [TerigoNativeMap.Marker]()) { markers, marker in
+                    if !markers.contains(where: { $0.id == marker.id }) { markers.append(marker) }
+                },
+                fitRequest: fitTrigger,
+                fitInsets: routeFitInsets,
+                onTapCoordinate: { coordinate in
+                    guard let onRouteDistanceSelection,
+                          let sample = route.elevationProfile.min(by: {
+                              $0.coordinate.routeDistance(to: coordinate) < $1.coordinate.routeDistance(to: coordinate)
+                          }) else { return }
+                    onRouteDistanceSelection(sample.distanceMeters)
+                }
+            )
         }
     }
 }
