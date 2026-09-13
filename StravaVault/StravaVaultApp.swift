@@ -439,7 +439,7 @@ struct RouteMapSettingsButton: View {
         } label: {
             Image(systemName: "slider.horizontal.3")
                 .font(.system(size: 18, weight: .semibold))
-                .frame(width: 40, height: 40)
+                .frame(width: 44, height: 44)
                 .background(.ultraThinMaterial, in: Circle())
         }
         .buttonStyle(.plain)

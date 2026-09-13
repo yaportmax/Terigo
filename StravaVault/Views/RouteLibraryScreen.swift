@@ -179,6 +179,8 @@ struct RouteLibraryScreen: View {
                     RouteEditorSheet(route: route)
                 }
                 .presentationDetents([.medium, .large], selection: $selectedRoutePresentationDetent)
+                .presentationBackground(TerigoTheme.background)
+                .presentationContentInteraction(.scrolls)
             }
             .sheet(isPresented: $isShowingDeletedRoutes) {
                 NavigationStack {

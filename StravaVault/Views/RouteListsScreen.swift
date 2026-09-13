@@ -363,6 +363,7 @@ private struct RouteListDetailScreen: View {
             }
             .presentationDetents([.large])
             .presentationBackground(TerigoTheme.background)
+            .presentationContentInteraction(.scrolls)
         }
         .sheet(isPresented: $isShowingSharingSheet) {
             NavigationStack {
@@ -403,7 +404,7 @@ private struct RouteListDetailScreen: View {
             .disabled(routes.isEmpty)
 
             Menu {
-                Section("View") {
+                Menu("Route View") {
                     Picker("Route View", selection: preferredDensityBinding) {
                         ForEach(AppRouteListDensity.allCases, id: \.self) { density in
                             Label(density.title, systemImage: density.symbolName)
@@ -469,6 +470,7 @@ private struct RouteListDetailScreen: View {
                         } label: {
                             Label(list.remoteAccessRole == .follower ? "Remove From Library" : "Delete List", systemImage: "trash")
                         }
+                        .accessibilityIdentifier("route-list-delete")
                     }
                 }
             } label: {

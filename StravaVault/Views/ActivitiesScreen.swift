@@ -632,7 +632,7 @@ private struct ActivitiesActionControlChip: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 11)
             .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-            .activitiesControlSurface(isActive: isActive, cornerRadius: 18)
+            .routeControlSurface(isActive: isActive, cornerRadius: 18)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(accessibilityIdentifier)
@@ -704,7 +704,7 @@ private struct ActivitiesSortSheet: View {
                             .padding(.horizontal, 14)
                             .padding(.vertical, 12)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .activitiesControlSurface(isActive: false, cornerRadius: 18)
+                            .routeControlSurface(isActive: false, cornerRadius: 18)
                         }
                         .buttonStyle(.plain)
                     }
@@ -780,7 +780,7 @@ private struct ActivitiesSortCriterionRow: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .activitiesControlSurface(isActive: false, cornerRadius: 18)
+                    .routeControlSurface(isActive: false, cornerRadius: 18)
                 }
                 .buttonStyle(.plain)
 
@@ -794,7 +794,7 @@ private struct ActivitiesSortCriterionRow: View {
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
-                    .activitiesControlSurface(isActive: false, cornerRadius: 18)
+                    .routeControlSurface(isActive: false, cornerRadius: 18)
                 }
                 .buttonStyle(.plain)
             }
@@ -843,11 +843,6 @@ private struct ActivitiesFiltersSheet: View {
     @State private var maximumDistanceInput = ""
     @State private var minimumClimbInput = ""
     @State private var maximumClimbInput = ""
-
-    private let rangeFieldColumns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
 
     private var measurementSystem: AppMeasurementSystem {
         AppMeasurementSystem(rawValue: measurementSystemRawValue) ?? .defaultValue
@@ -1112,7 +1107,7 @@ private struct ActivitiesSelectionPill: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .activitiesControlSurface(isActive: isSelected, cornerRadius: 18)
+            .routeControlSurface(isActive: isSelected, cornerRadius: 18)
         }
         .buttonStyle(.plain)
     }
@@ -1164,12 +1159,6 @@ private struct ActivitiesRangeField: View {
     }
 }
 
-private extension View {
-    @ViewBuilder
-    func activitiesControlSurface(isActive: Bool, cornerRadius: CGFloat) -> some View {
-        routeControlSurface(isActive: isActive, cornerRadius: cornerRadius)
-    }
-}
 
 private extension ActivitySourceKind {
     var title: String {

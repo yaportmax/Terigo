@@ -22,6 +22,8 @@ def prepare_simulator():
     subprocess.run(["xcrun", "simctl", "bootstatus", device["udid"], "-b"], check=True)
     subprocess.run(["xcrun", "simctl", "status_bar", device["udid"], "override",
                     "--time", "9:41", "--batteryState", "charged", "--batteryLevel", "100"], check=True)
+    # The test routes and this starting position are synthetic Marin Headlands fixtures.
+    subprocess.run(["xcrun", "simctl", "location", device["udid"], "set", "37.8259,-122.4977"], check=True)
     (BUILD / "simulator.json").write_text(json.dumps(device))
     return device
 

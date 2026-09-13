@@ -10,7 +10,6 @@ struct RouteVaultRootScreen: View {
 
     @AppStorage("terigo.localLibraryEnabled") private var localLibraryEnabled = false
     @AppStorage(RouteTrackingActivityStore.activeRouteIDDefaultsKey) private var activeRouteTrackingRouteID = 0
-    @Environment(\.colorScheme) private var colorScheme
     @Query(sort: [SortDescriptor(\RouteRecord.syncedAt, order: .reverse)]) private var routes: [RouteRecord]
     @State private var accountManager = RouteVaultAccountManager()
     @State private var statusBannerDismissTask: Task<Void, Never>?

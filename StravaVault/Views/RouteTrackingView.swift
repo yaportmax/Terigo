@@ -199,7 +199,7 @@ struct RouteTrackingView: View {
         HStack(spacing: 12) {
             Button(action: handleCloseTapped) {
                 Image(systemName: session.canFinish ? "xmark" : "chevron.down")
-                    .font(.headline.weight(.bold))
+                    .font(.system(size: 18, weight: .semibold))
                     .frame(width: 44, height: 44)
                     .background(.ultraThinMaterial, in: Circle())
             }
@@ -218,7 +218,7 @@ struct RouteTrackingView: View {
                     followsUser = true
                 } label: {
                     Image(systemName: "scope")
-                        .font(.headline.weight(.bold))
+                        .font(.system(size: 18, weight: .semibold))
                         .frame(width: 44, height: 44)
                         .background(.ultraThinMaterial, in: Circle())
                 }
@@ -332,48 +332,22 @@ struct RouteTrackingView: View {
     private var batterySaverButton: some View {
         Button(action: handleBatterySaverTapped) {
             Image(systemName: session.usesContinuousTracking ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash")
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(
-                    session.usesContinuousTracking
-                        ? Color(red: 0.18, green: 0.82, blue: 0.69)
-                        : Color.white
-                )
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(session.usesContinuousTracking ? TerigoTheme.accent : Color.primary)
                 .frame(width: 44, height: 44)
                 .background(.ultraThinMaterial, in: Circle())
-                .shadow(color: .black.opacity(0.12), radius: 6, x: 0, y: 1)
-        }
-        .overlay(alignment: .bottomTrailing) {
-            Circle()
-                .fill(
-                    session.usesContinuousTracking
-                        ? Color(red: 0.18, green: 0.82, blue: 0.69)
-                        : Color(red: 0.96, green: 0.71, blue: 0.24)
-                )
-                .frame(width: 10, height: 10)
-                .overlay {
+                .overlay(alignment: .bottomTrailing) {
                     Circle()
-                        .strokeBorder(Color.black.opacity(0.18), lineWidth: 1)
+                        .fill(session.usesContinuousTracking ? TerigoTheme.accent : Color.orange)
+                        .frame(width: 10, height: 10)
+                        .offset(x: -3, y: -3)
+                        .accessibilityHidden(true)
                 }
-                .offset(x: -3, y: -3)
-        }
-        .overlay {
-            Circle()
-                .strokeBorder(
-                    session.usesContinuousTracking
-                        ? Color(red: 0.18, green: 0.82, blue: 0.69).opacity(0.32)
-                        : Color.white.opacity(0.08),
-                    lineWidth: 1
-                )
         }
         .buttonStyle(.plain)
-        .accessibilityElement(children: .ignore)
         .accessibilityLabel("Continuous GPS")
         .accessibilityValue(session.usesContinuousTracking ? "On" : "Off")
-        .accessibilityHint(
-            session.usesContinuousTracking
-                ? "Turns off continuous GPS tracking."
-                : "Turns on continuous GPS tracking."
-        )
+        .accessibilityHint(session.usesContinuousTracking ? "Turns off continuous GPS tracking." : "Turns on continuous GPS tracking.")
         .accessibilityIdentifier("route-tracking-battery-saver")
     }
 

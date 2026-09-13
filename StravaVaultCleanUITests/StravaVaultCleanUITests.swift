@@ -7,6 +7,8 @@ final class StravaVaultCleanUITests: XCTestCase {
 
     func testVisualTourLight() throws { try visualTour(appearance: "light") }
     func testVisualTourDark() throws { try visualTour(appearance: "dark") }
+    func testActivityTourLight() throws { try activityTour(appearance: "light") }
+    func testActivityTourDark() throws { try activityTour(appearance: "dark") }
 
     func testLibraryOpenFailureCanRetry() throws {
         XCUIDevice.shared.orientation = .portrait
@@ -93,6 +95,10 @@ final class StravaVaultCleanUITests: XCTestCase {
             tap(app.buttons["route-tracking-close"])
         }
         XCTAssertTrue(app.buttons["route-row-4001"].waitForExistence(timeout: 12))
+    }
+
+    func testExploreMapTools() throws {
+        let app = launch()
         tapTab("Explore", app)
         tap(app.buttons["Fit routes on map"])
         tap(app.buttons["Open map full screen"])
@@ -119,7 +125,7 @@ final class StravaVaultCleanUITests: XCTestCase {
         capture("list-collaboration", app)
         tap(app.buttons["Close"])
         tap(app.buttons["route-list-settings-button"])
-        tap(app.buttons["Delete List"])
+        tap(app.buttons["route-list-delete"])
         tap(app.alerts.buttons["Delete List"])
         XCTAssertTrue(app.buttons["route-list-row-weekend-hits"].waitForExistence(timeout: 8))
         XCTAssertFalse(app.buttons["route-list-row-training-block"].exists)
@@ -150,10 +156,7 @@ final class StravaVaultCleanUITests: XCTestCase {
         tap(app.buttons["route-list-row-weekend-hits"])
         openRoute(app)
         let delete = app.buttons["Delete Route"]
-        for _ in 0..<8 {
-            if delete.isHittable { break }
-            app.swipeUp()
-        }
+        scrollTo(delete, app)
         tap(delete)
         capture("route-delete-confirmation", app)
         tap(app.alerts.buttons["Delete Route"])
@@ -228,6 +231,10 @@ final class StravaVaultCleanUITests: XCTestCase {
         capture("\(appearance)-10-lists", app)
         tap(app.buttons["route-list-row-weekend-hits"])
         capture("\(appearance)-11-list-detail", app)
+    }
+
+    private func activityTour(appearance: String) throws {
+        let app = launch(appearance: appearance)
         tapTab("Activities", app)
         capture("\(appearance)-12-activities", app)
         tap(app.buttons["activities-sort-button"])
@@ -297,9 +304,9 @@ final class StravaVaultCleanUITests: XCTestCase {
     private func scrollTo(_ element: XCUIElement, _ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         for _ in 0..<12 {
             if element.exists && element.isHittable { return }
-            // The gutter scrolls the page without scrubbing an interactive chart.
-            app.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.72))
-                .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.30)))
+            // Start inside the page, above the persistent footer.
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65))
+                .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.30)))
         }
         capture("failure-scrolling-to-section", app)
         XCTAssertTrue(element.isHittable, "Section was not reachable: \(element)", file: file, line: line)
@@ -309,6 +316,12 @@ final class StravaVaultCleanUITests: XCTestCase {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+        if name.hasPrefix("failure") {
+            let hierarchy = XCTAttachment(string: app.debugDescription)
+            hierarchy.name = "\(name)-hierarchy"
+            hierarchy.lifetime = .keepAlways
+            add(hierarchy)
+        }
     }
     private func waitUntil(timeout: TimeInterval = 8, _ condition: () -> Bool) -> Bool {
         let deadline = Date().addingTimeInterval(timeout)

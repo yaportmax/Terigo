@@ -2107,7 +2107,7 @@ struct RouteElevationChartPanel: View {
                     }
                     .chartOverlay { proxy in
                         GeometryReader { geometry in
-                            Rectangle()
+                            let selectionSurface = Rectangle()
                                 .fill(.clear)
                                 .contentShape(Rectangle())
                                 .simultaneousGesture(
@@ -2121,6 +2121,10 @@ struct RouteElevationChartPanel: View {
                                             )
                                         }
                                 )
+                            if panelStyle == .embedded {
+                                selectionSurface
+                            } else {
+                                selectionSurface
                                 .simultaneousGesture(
                                     DragGesture(minimumDistance: 6)
                                         .onChanged { value in
@@ -2154,6 +2158,7 @@ struct RouteElevationChartPanel: View {
                                             pinchAnchorDistance = nil
                                         }
                                 )
+                            }
                         }
                     }
                     .frame(height: panelStyle.chartHeight)
@@ -2200,6 +2205,8 @@ struct RouteElevationChartPanel: View {
                 .padding(.vertical, panelStyle.verticalPadding)
             }
         }
+        // Charts have fixed plotting space; the route summary below retains full Dynamic Type.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .task(id: sampleCacheKey) {
             refreshSampleCaches()
         }
@@ -2682,7 +2689,7 @@ private struct RouteFullScreenMapView: View {
                             dismiss()
                         } label: {
                             Image(systemName: "xmark")
-                                .font(.headline.weight(.bold))
+                                .font(.system(size: 18, weight: .semibold))
                                 .frame(width: 44, height: 44)
                                 .background(.ultraThinMaterial, in: Circle())
                         }
@@ -2695,7 +2702,7 @@ private struct RouteFullScreenMapView: View {
                             fitTrigger += 1
                         } label: {
                             Image(systemName: "scope")
-                                .font(.headline.weight(.bold))
+                                .font(.system(size: 18, weight: .semibold))
                                 .frame(width: 44, height: 44)
                                 .background(.ultraThinMaterial, in: Circle())
                         }
@@ -2709,6 +2716,7 @@ private struct RouteFullScreenMapView: View {
                     if isShowingElevationChart {
                         Text(route.name)
                             .font(.headline.weight(.bold))
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .foregroundStyle(.primary)
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
@@ -2743,7 +2751,7 @@ private struct RouteFullScreenMapView: View {
 
                         Button(action: onToggleElevationChart) {
                             Image(systemName: "eye")
-                                .font(.headline.weight(.bold))
+                                .font(.system(size: 18, weight: .semibold))
                                 .frame(width: 44, height: 44)
                                 .background(.ultraThinMaterial, in: Circle())
                         }
