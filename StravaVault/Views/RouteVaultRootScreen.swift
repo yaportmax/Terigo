@@ -17,7 +17,7 @@ struct RouteVaultRootScreen: View {
 
     var body: some View {
         Group {
-            if accountManager.isRestoringSession && !accountManager.didRestoreInitialState {
+            if accountManager.isRestoringSession && !accountManager.didRestoreInitialState && !localLibraryEnabled && routes.isEmpty {
                 ProgressView("Restoring Terigo…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if accountManager.isAuthenticated || localLibraryEnabled || !routes.isEmpty {

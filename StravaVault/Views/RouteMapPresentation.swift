@@ -409,17 +409,15 @@ private struct RouteMapSelectedRouteCard: View {
     }
 }
 
-private extension MKCoordinateRegion {
+extension MKCoordinateRegion {
     func contains(_ coordinate: CLLocationCoordinate2D) -> Bool {
         let latitudeMin = center.latitude - (span.latitudeDelta / 2)
         let latitudeMax = center.latitude + (span.latitudeDelta / 2)
-        let longitudeMin = center.longitude - (span.longitudeDelta / 2)
-        let longitudeMax = center.longitude + (span.longitudeDelta / 2)
+        let longitudeDistance = abs((coordinate.longitude - center.longitude + 540).truncatingRemainder(dividingBy: 360) - 180)
 
         return coordinate.latitude >= latitudeMin &&
             coordinate.latitude <= latitudeMax &&
-            coordinate.longitude >= longitudeMin &&
-            coordinate.longitude <= longitudeMax
+            longitudeDistance <= span.longitudeDelta / 2
     }
 }
 
@@ -471,4 +469,3 @@ struct RouteMapBrowseRow: View {
         .routeControlSurface(isActive: isSelected, cornerRadius: 22)
     }
 }
-

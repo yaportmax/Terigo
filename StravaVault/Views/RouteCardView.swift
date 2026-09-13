@@ -229,7 +229,11 @@ struct RouteTraceThumbnail: View {
     }
 
     private func projectedPoints(in size: CGSize) -> [CGPoint] {
-        let valid = coordinates.filter(CLLocationCoordinate2DIsValid)
+        // A tiny thumbnail needs a bounded number of points, even for all-day tracks.
+        let strideSize = max(1, Int(ceil(Double(coordinates.count) / 180)))
+        var sampled = stride(from: 0, to: coordinates.count, by: strideSize).map { coordinates[$0] }
+        if let last = coordinates.last { sampled.append(last) }
+        let valid = sampled.filter(CLLocationCoordinate2DIsValid)
         guard let origin = valid.first else { return [] }
         let scale = max(cos(origin.latitude * .pi / 180), 0.01)
         // Unwrap around the start so routes crossing the date line stay compact.

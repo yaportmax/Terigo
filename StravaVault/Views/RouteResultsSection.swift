@@ -19,6 +19,7 @@ struct RouteResultsSection: View {
     let onReportStatus: (String) -> Void
     let onReportError: (String) -> Void
     let onSelect: (RouteRecord) -> Void
+    var emptyListName: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -33,9 +34,9 @@ struct RouteResultsSection: View {
 
             if filteredRoutes.isEmpty {
                 ContentUnavailableView {
-                    Label(routeCount == 0 ? "Your next route starts here" : "No matching routes", systemImage: routeCount == 0 ? "map" : "magnifyingglass")
+                    Label(routeCount == 0 ? (emptyListName == nil ? "Your next route starts here" : "Ready for your routes") : "No matching routes", systemImage: routeCount == 0 ? "map" : "magnifyingglass")
                 } description: {
-                    Text(isSyncing ? "Your routes are syncing from Strava." : (routeCount == 0 ? "Tap + to import a GPX file, or connect Strava to bring your routes with you." : "Try another search or clear your filters."))
+                    Text(isSyncing ? "Your routes are syncing from Strava." : (routeCount == 0 ? emptyListName.map { "Open a route in your library and add it to \($0) under Lists." } ?? "Tap + to import a GPX file, or connect Strava to bring your routes with you." : "Try another search or clear your filters."))
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 34)
@@ -81,7 +82,8 @@ struct RouteOfflineDownloadCoordinator {
     private func preferredSelection(for route: RouteRecord) -> RouteOfflineDownloadSelection {
         let offlineStatus = offlineAssetService.offlineStatus(for: route)
         let hasConcreteAssets = offlineStatus.hasConcreteAssets
-        let selectedMapStyles = hasConcreteAssets ? offlineStatus.mapStyles : [.outdoors]
+        let selectedMapStyles: [AppRouteMapStyle] = RouteVaultMapboxConfiguration.isConfigured
+            ? (hasConcreteAssets ? offlineStatus.mapStyles : [.outdoors]) : []
 
         return RouteOfflineDownloadSelection(
             includesGPX: hasConcreteAssets ? (offlineStatus.hasGPX || !selectedMapStyles.isEmpty) : true,
@@ -525,4 +527,3 @@ private struct QuickCreateListSheet: View {
         }
     }
 }
-

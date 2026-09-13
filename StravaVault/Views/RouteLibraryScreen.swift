@@ -237,7 +237,6 @@ private struct RouteLibraryScreen: View {
 
     private var libraryScrollContent: some View {
         let filteredRoutes = model.filteredRoutes(from: routes)
-        let showsLibrary = true
 
         return ScrollView {
             VStack(alignment: .leading, spacing: 22) {
@@ -273,43 +272,43 @@ private struct RouteLibraryScreen: View {
                     ConnectionSection(model: model)
                 }
 
-                if showsLibrary {
-                    ControlsSection(
-                        model: model,
-                        allRoutes: routes,
-                        lists: sortedRouteLists
-                    )
-                    .id("controls-\(appMeasurementSystemRawValue)")
+                ControlsSection(
+                    model: model,
+                    allRoutes: routes,
+                    lists: sortedRouteLists
+                )
+                .id("controls-\(appMeasurementSystemRawValue)")
 
-                    RouteResultsSection(
-                        filteredRoutes: filteredRoutes,
-                        allLists: sortedRouteLists,
-                        routeCount: routes.count,
-                        density: routeListDensity,
-                        hasActiveFilters: model.hasActiveFilters,
-                        isSyncing: model.isSyncing,
-                        onResetFilters: model.resetFilters,
-                        onDeleteRoute: { route in
-                            model.deleteRoute(route, using: modelContext, showsStatusMessage: false)
-                        },
-                        onToggleRouteList: { route, list in
-                            route.listNames = route.toggledListNames(with: list.name)
-                            try? modelContext.save()
+                RouteResultsSection(
+                    filteredRoutes: filteredRoutes,
+                    allLists: sortedRouteLists,
+                    routeCount: routes.count,
+                    density: routeListDensity,
+                    hasActiveFilters: model.hasActiveFilters,
+                    isSyncing: model.isSyncing,
+                    onResetFilters: model.resetFilters,
+                    onDeleteRoute: { route in
+                        model.deleteRoute(route, using: modelContext, showsStatusMessage: false)
+                    },
+                    onToggleRouteList: { route, list in
+                        route.listNames = route.toggledListNames(with: list.name)
+                        do {
+                            try modelContext.save()
                             model.errorMessage = nil
-                        },
-                        onReportStatus: { message in
-                            _ = message
-                        },
-                        onReportError: { message in
-                            model.errorMessage = message
+                        } catch {
+                            model.errorMessage = "Couldn’t save the list change. \(error.localizedDescription)"
                         }
-                    ) { route in
-                        model.selectedRoute = route
+                    },
+                    onReportStatus: { message in
+                        _ = message
+                    },
+                    onReportError: { message in
+                        model.errorMessage = message
                     }
-                    .id("results-\(appMeasurementSystemRawValue)-\(routeListDensityRawValue)")
-                } else {
-                    DisconnectedEmptyState(isImportingGPX: model.isImportingGPX)
+                ) { route in
+                    model.selectedRoute = route
                 }
+                .id("results-\(appMeasurementSystemRawValue)-\(routeListDensityRawValue)")
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)

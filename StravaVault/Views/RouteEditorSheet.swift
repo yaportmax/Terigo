@@ -3447,7 +3447,7 @@ private struct RouteOfflineDownloadSheet: View {
                 )
             }
 
-            Section("Map Styles") {
+            Section {
                 ForEach(AppRouteMapStyle.allCases) { mapStyle in
                     RouteOfflineToggleRow(
                         title: mapStyle.title,
@@ -3469,8 +3469,15 @@ private struct RouteOfflineDownloadSheet: View {
                             }
                         ),
                         sizeText: byteCountText(Self.estimatedMapBytes(for: route, mapStyle: mapStyle)),
-                        statusText: offlineStatus.mapStyles.contains(mapStyle) ? "Saved" : "Not Saved"
+                        statusText: offlineStatus.mapStyles.contains(mapStyle) ? "Saved" : "Not Saved",
+                        isDisabled: !RouteVaultMapboxConfiguration.isConfigured
                     )
+                }
+            } header: {
+                Text("Map Styles")
+            } footer: {
+                if !RouteVaultMapboxConfiguration.isConfigured {
+                    Text("Offline map downloads aren’t available in this build. You can still save the route as GPX.")
                 }
             }
 

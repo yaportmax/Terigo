@@ -25,7 +25,7 @@ enum RouteVaultMapboxConfiguration {
 
     static func configure() {
         let token = publicToken
-        guard !token.isEmpty else {
+        guard isConfigured else {
             return
         }
 

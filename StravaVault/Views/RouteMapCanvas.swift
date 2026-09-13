@@ -120,7 +120,7 @@ struct MapOverlayIconButton: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.headline.weight(.bold))
-                .frame(width: 40, height: 40)
+                .frame(width: 44, height: 44)
                 .background(.ultraThinMaterial, in: Circle())
                 .contentShape(Circle())
         }
@@ -923,7 +923,7 @@ struct TerigoNativeMap: View {
             ForEach(markers) { marker in
                 Annotation(marker.title, coordinate: marker.coordinate) {
                     Button { onSelectMarker(marker.id) } label: {
-                        Image(systemName: "point.bottomleft.forward.to.point.topright.scurvepath")
+                        Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
                             .font(.headline)
                             .frame(width: 44, height: 44)
                             .foregroundStyle(.white)

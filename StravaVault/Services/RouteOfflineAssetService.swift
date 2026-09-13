@@ -566,11 +566,29 @@ struct RouteOfflineAssetService {
         return storedFileBytes + tileRegionByteCount
     }
 
-    func removeOfflineAssets(for route: RouteRecord) throws {
-        let tileRegionIDs = Set(routeOfflineMetadataRecords(for: route).map { $0.metadata.tileRegionID })
-        let routeDirectory = try directory(for: route)
+    struct RemovalPlan {
+        let tileRegionIDs: Set<String>
+        let routeDirectory: URL
+        let storedURLs: [URL]
+    }
 
-        for url in routeStoredAssetURLs(for: route) {
+    /// Capture file locations before SwiftData invalidates a deleted record.
+    func removalPlan(for route: RouteRecord) throws -> RemovalPlan {
+        RemovalPlan(
+            tileRegionIDs: Set(routeOfflineMetadataRecords(for: route).map { $0.metadata.tileRegionID }),
+            routeDirectory: try directory(for: route),
+            storedURLs: routeStoredAssetURLs(for: route)
+        )
+    }
+
+    func removeOfflineAssets(for route: RouteRecord) throws {
+        try removeOfflineAssets(using: removalPlan(for: route))
+    }
+
+    func removeOfflineAssets(using plan: RemovalPlan) throws {
+        let routeDirectory = plan.routeDirectory
+
+        for url in plan.storedURLs {
             if fileManager.fileExists(atPath: url.path),
                !isDescendant(url, of: routeDirectory) {
                 try fileManager.removeItem(at: url)
@@ -581,7 +599,7 @@ struct RouteOfflineAssetService {
             try fileManager.removeItem(at: routeDirectory)
         }
 
-        for tileRegionID in tileRegionIDs {
+        for tileRegionID in plan.tileRegionIDs {
             removeTileRegionIfUnreferenced(tileRegionID)
         }
     }

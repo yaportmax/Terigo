@@ -17,6 +17,7 @@ struct ActivitiesScreen: View {
     @State private var model = ActivitiesModel()
     @State private var isShowingGPXImporter = false
     @State private var isShowingSettingsSheet = false
+    @State private var importAfterSettingsDismiss = false
     @State private var statusBannerDismissTask: Task<Void, Never>?
 
     private var measurementSystem: AppMeasurementSystem {
@@ -56,9 +57,7 @@ struct ActivitiesScreen: View {
                 VStack(alignment: .leading, spacing: 18) {
                     bannerStack
                     connectionSection
-                    if model.isConnected || !activities.isEmpty {
-                        activitiesTab
-                    }
+                    activitiesTab
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
@@ -91,7 +90,12 @@ struct ActivitiesScreen: View {
             }
         }
         .accessibilityIdentifier("activities-screen")
-        .sheet(isPresented: $isShowingSettingsSheet) {
+        .sheet(isPresented: $isShowingSettingsSheet, onDismiss: {
+            if importAfterSettingsDismiss {
+                importAfterSettingsDismiss = false
+                isShowingGPXImporter = true
+            }
+        }) {
             NavigationStack {
                 ActivitiesSettingsSheet(
                     activityListDensitySelection: activityListDensitySelection,
@@ -101,8 +105,8 @@ struct ActivitiesScreen: View {
                     isImportingLocalActivities: model.isImportingLocalActivities,
                     onSyncActivities: { Task { await model.syncActivities(using: modelContext) } },
                     onImportGPXActivity: {
+                        importAfterSettingsDismiss = true
                         isShowingSettingsSheet = false
-                        isShowingGPXImporter = true
                     },
                     onReconnectStrava: { Task { await model.connect() } },
                     onDisconnectStrava: { model.disconnect() }
@@ -1202,28 +1206,6 @@ private struct ActivitiesSummaryStrip: View {
     }
 }
 
-private struct ActivityMiniMetric: View {
-    let title: String
-    let value: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title.uppercased())
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.secondary)
-
-            Text(value)
-                .font(.headline.weight(.bold))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-}
-
 private struct ActivityListRow: View {
     let activity: ActivityRecord
     let density: AppActivityListDensity
@@ -2124,7 +2106,7 @@ private struct ActivityRouteMapPlaceholderCard: View {
             .fill(TerigoTheme.surface)
             .overlay {
                 ProgressView()
-                    .tint(.white.opacity(0.8))
+                    .tint(TerigoTheme.accent)
             }
     }
 }
@@ -2174,14 +2156,7 @@ private struct ActivityRouteMapPlaceholder: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.11, green: 0.13, blue: 0.17),
-                    Color(red: 0.06, green: 0.07, blue: 0.10)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            TerigoTheme.surface
 
             VStack(spacing: 14) {
                 Image(systemName: activity.sportSymbolName)
@@ -2197,58 +2172,6 @@ private struct ActivityRouteMapPlaceholder: View {
                     .foregroundStyle(.secondary)
             }
             .padding(24)
-        }
-    }
-}
-
-private struct ActivityExplorerMapCard: View {
-    let period: ActivityCoveragePeriodSnapshot
-    let selectedActivity: ActivityRecord?
-    let userInterfaceStyle: UIUserInterfaceStyle
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            ActivityExplorerMapViewRepresentable(
-                period: period,
-                selectedActivity: selectedActivity,
-                userInterfaceStyle: userInterfaceStyle
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-
-            VStack(alignment: .trailing, spacing: 12) {
-                RouteMapSettingsButton()
-
-                Spacer(minLength: 0)
-
-                ActivityExplorerLegend()
-            }
-            .padding(14)
-        }
-    }
-}
-
-private struct ActivityExplorerLegend: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            legendRow(color: Color(red: 1.0, green: 0.58, blue: 0.18), title: "Visited")
-            legendRow(color: Color(red: 0.22, green: 0.82, blue: 1.0), title: "Cluster")
-            legendRow(color: Color(red: 1.0, green: 0.84, blue: 0.28), title: "Square")
-            legendRow(color: Color.primary, title: "Selected")
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 9)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
-
-    private func legendRow(color: Color, title: String) -> some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-
-            Text(title)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.primary)
         }
     }
 }
@@ -2499,256 +2422,6 @@ private struct ActivityRouteMapViewRepresentable: UIViewRepresentable {
                 )
                 mapView.camera.ease(to: camera, duration: 0.25)
             } catch { }
-        }
-    }
-}
-
-private struct ActivityExplorerMapViewRepresentable: UIViewRepresentable {
-    @AppStorage(AppRouteMapStyle.storageKey) private var appRouteMapStyleRawValue = AppRouteMapStyle.defaultValue.rawValue
-    @AppStorage(AppRouteMapPerspective.storageKey) private var appRouteMapPerspectiveRawValue = AppRouteMapPerspective.defaultValue.rawValue
-
-    let period: ActivityCoveragePeriodSnapshot
-    let selectedActivity: ActivityRecord?
-    let userInterfaceStyle: UIUserInterfaceStyle
-
-    private var appRouteMapStyle: AppRouteMapStyle {
-        AppRouteMapStyle.resolved(from: appRouteMapStyleRawValue)
-    }
-
-    private var appRouteMapPerspective: AppRouteMapPerspective {
-        AppRouteMapPerspective(rawValue: appRouteMapPerspectiveRawValue) ?? .twoDimensional
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
-
-    func makeUIView(context: Context) -> MapView {
-        RouteVaultMapboxConfiguration.configure()
-
-        let mapView = MapView(
-            frame: .zero,
-            mapInitOptions: MapInitOptions(
-                mapStyle: appRouteMapStyle.resolvedStyle(colorScheme: userInterfaceStyle),
-                cameraOptions: CameraOptions(
-                    center: selectedActivity?.startCoordinate ?? period.explorerTiles.first?.polygon.first,
-                    zoom: 7,
-                    pitch: appRouteMapPerspective.isThreeDimensional ? appRouteMapPerspective.pitch : 0
-                )
-            )
-        )
-        context.coordinator.bind(to: mapView)
-        configure(mapView)
-        return mapView
-    }
-
-    func updateUIView(_ mapView: MapView, context: Context) {
-        configure(mapView)
-        context.coordinator.update(
-            mapView: mapView,
-            period: period,
-            selectedActivity: selectedActivity,
-            routeMapStyle: appRouteMapStyle,
-            routeMapPerspective: appRouteMapPerspective,
-            userInterfaceStyle: userInterfaceStyle
-        )
-    }
-
-    private func configure(_ mapView: MapView) {
-        mapView.location.options.puckType = .puck2D()
-        mapView.gestures.options.pitchEnabled = appRouteMapPerspective.isThreeDimensional
-        mapView.gestures.options.rotateEnabled = true
-
-        var ornaments = mapView.ornaments.options
-        ornaments.compass.visibility = .hidden
-        ornaments.scaleBar.visibility = .hidden
-        mapView.ornaments.options = ornaments
-    }
-
-    final class Coordinator {
-        private weak var mapView: MapView?
-        private var cancelables = Set<AnyCancelable>()
-        private var tileManager: PolygonAnnotationManager?
-        private var selectedOutlineManager: PolylineAnnotationManager?
-        private var selectedLineManager: PolylineAnnotationManager?
-        private var lastSignature: Int?
-        private var lastStyleKey: String?
-        private var lastPerspective: AppRouteMapPerspective?
-        private var currentUsesStandardDarkReadabilityTuning = false
-
-        func bind(to mapView: MapView) {
-            guard self.mapView !== mapView else {
-                return
-            }
-
-            cancelables.removeAll()
-            self.mapView = mapView
-
-            mapView.mapboxMap.onStyleLoaded.observeNext { [weak self, weak mapView] _ in
-                guard let self, let mapView else {
-                    return
-                }
-
-                RouteMapStyleReadabilityTuning.apply(
-                    to: mapView.mapboxMap,
-                    usesStandardDarkStyle: self.currentUsesStandardDarkReadabilityTuning
-                )
-                RouteMapTerrainTuning.apply(
-                    to: mapView.mapboxMap,
-                    perspective: self.lastPerspective ?? .defaultValue
-                )
-                self.recreateManagers(on: mapView)
-                self.lastSignature = nil
-            }
-            .store(in: &cancelables)
-        }
-
-        func update(
-            mapView: MapView,
-            period: ActivityCoveragePeriodSnapshot,
-            selectedActivity: ActivityRecord?,
-            routeMapStyle: AppRouteMapStyle,
-            routeMapPerspective: AppRouteMapPerspective,
-            userInterfaceStyle: UIUserInterfaceStyle
-        ) {
-            let styleKey = "\(routeMapStyle.rawValue)-\(userInterfaceStyle.rawValue)"
-            currentUsesStandardDarkReadabilityTuning = routeMapStyle.usesStandardDarkReadabilityTuning(
-                colorScheme: userInterfaceStyle
-            )
-            lastPerspective = routeMapPerspective
-            RouteMapTerrainTuning.apply(
-                to: mapView.mapboxMap,
-                perspective: routeMapPerspective
-            )
-            if styleKey != lastStyleKey {
-                lastStyleKey = styleKey
-                mapView.mapboxMap.mapStyle = routeMapStyle.resolvedStyle(colorScheme: userInterfaceStyle)
-                recreateManagers(on: mapView)
-            }
-
-            var hasher = Hasher()
-            hasher.combine(period.id)
-            hasher.combine(period.visitedTileCount)
-            hasher.combine(period.bestSquare.sideLength)
-            hasher.combine(period.bestCluster.tileCount)
-            hasher.combine(tileHash(for: period.explorerTiles))
-            hasher.combine(selectedActivity?.activityKey)
-            hasher.combine(selectedActivity?.activityGeometryPolyline)
-            hasher.combine(routeMapPerspective.rawValue)
-            let signature = hasher.finalize()
-            guard signature != lastSignature else {
-                return
-            }
-
-            ensureManagers(on: mapView)
-            render(period: period, selectedActivity: selectedActivity)
-            lastSignature = signature
-            fit(period: period, selectedActivity: selectedActivity, on: mapView, perspective: routeMapPerspective)
-        }
-
-        private func recreateManagers(on mapView: MapView) {
-            mapView.annotations.removeAnnotationManager(withId: "activity-explorer-tiles")
-            mapView.annotations.removeAnnotationManager(withId: "activity-selected-outline")
-            mapView.annotations.removeAnnotationManager(withId: "activity-selected-line")
-            tileManager = mapView.annotations.makePolygonAnnotationManager(id: "activity-explorer-tiles")
-            selectedOutlineManager = mapView.annotations.makePolylineAnnotationManager(id: "activity-selected-outline")
-            selectedLineManager = mapView.annotations.makePolylineAnnotationManager(id: "activity-selected-line")
-        }
-
-        private func ensureManagers(on mapView: MapView) {
-            if tileManager == nil || selectedOutlineManager == nil || selectedLineManager == nil {
-                recreateManagers(on: mapView)
-            }
-        }
-
-        private func render(period: ActivityCoveragePeriodSnapshot, selectedActivity: ActivityRecord?) {
-            let squareTiles = Set(period.bestSquare.tiles)
-            let clusterTiles = Set(period.bestCluster.tiles)
-            tileManager?.annotations = period.explorerTiles.map { tile in
-                var polygon = PolygonAnnotation(
-                    id: tile.id,
-                    polygon: Polygon(outerRing: Ring(coordinates: tile.polygon))
-                )
-                let isSquare = squareTiles.contains(tile.coordinate)
-                let isCluster = clusterTiles.contains(tile.coordinate)
-                let visitAlpha = min(0.22 + (Double(min(tile.visitCount, 5)) * 0.06), 0.48)
-
-                polygon.fillColor = StyleColor(
-                    isSquare
-                        ? UIColor(red: 1.0, green: 0.84, blue: 0.28, alpha: 1.0)
-                        : (isCluster
-                            ? UIColor(red: 0.22, green: 0.82, blue: 1.0, alpha: 1.0)
-                            : UIColor(red: 1.0, green: 0.58, blue: 0.18, alpha: 1.0))
-                )
-                polygon.fillOpacity = isSquare ? 0.52 : (isCluster ? 0.40 : visitAlpha)
-                polygon.fillOutlineColor = StyleColor(
-                    isSquare
-                        ? UIColor(red: 1.0, green: 0.95, blue: 0.72, alpha: 0.98)
-                        : UIColor.white.withAlphaComponent(isCluster ? 0.34 : 0.12)
-                )
-                return polygon
-            }
-
-            guard let selectedActivity, selectedActivity.coordinates.count > 1 else {
-                selectedOutlineManager?.annotations = []
-                selectedLineManager?.annotations = []
-                return
-            }
-
-            var outline = PolylineAnnotation(lineCoordinates: selectedActivity.coordinates)
-            outline.lineColor = StyleColor(RouteMapLineStyle.outlineColor)
-            outline.lineWidth = RouteMapLineStyle.outlineWidth
-
-            var line = PolylineAnnotation(lineCoordinates: selectedActivity.coordinates)
-            line.lineColor = StyleColor(RouteMapLineStyle.fillColor)
-            line.lineWidth = RouteMapLineStyle.fillWidth
-
-            selectedOutlineManager?.annotations = [outline]
-            selectedOutlineManager?.lineDasharray = nil
-            selectedLineManager?.annotations = [line]
-            selectedLineManager?.lineDasharray = activitySurfaceKind(for: selectedActivity.sportKind) == .paved ? nil : RouteMapLineStyle.unpavedDashPattern
-        }
-
-        private func fit(
-            period: ActivityCoveragePeriodSnapshot,
-            selectedActivity: ActivityRecord?,
-            on mapView: MapView,
-            perspective: AppRouteMapPerspective
-        ) {
-            let coordinates: [CLLocationCoordinate2D]
-            if let selectedActivity, selectedActivity.coordinates.count > 1 {
-                coordinates = selectedActivity.coordinates
-            } else {
-                coordinates = period.explorerTiles.flatMap(\.polygon)
-            }
-
-            guard coordinates.count > 1 else {
-                return
-            }
-
-            do {
-                let camera = try mapView.mapboxMap.camera(
-                    for: coordinates,
-                    camera: CameraOptions(
-                        bearing: 0,
-                        pitch: perspective.isThreeDimensional ? perspective.pitch : 0
-                    ),
-                    coordinatesPadding: UIEdgeInsets(top: 34, left: 28, bottom: 34, right: 28),
-                    maxZoom: selectedActivity == nil ? 12.6 : 15.8,
-                    offset: nil
-                )
-                mapView.camera.ease(to: camera, duration: 0.25)
-            } catch { }
-        }
-
-        private func tileHash(for tiles: [ActivityExplorerTile]) -> Int {
-            var hasher = Hasher()
-            hasher.combine(tiles.count)
-            for tile in tiles.prefix(4_000) {
-                hasher.combine(tile.coordinate)
-                hasher.combine(tile.visitCount)
-            }
-            return hasher.finalize()
         }
     }
 }

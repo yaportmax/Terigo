@@ -114,8 +114,8 @@ struct ConnectionSection: View {
 
                     Text(
                         isReconnectState
-                            ? "Your previous Strava session is no longer valid. Reauthorize the account to resume route sync and exports."
-                            : "This app uses its built-in Strava app configuration. The only user action is authorizing account access."
+                            ? "Reconnect to refresh your saved Strava routes."
+                            : "Bring your saved routes into Terigo, or keep exploring with GPX files."
                     )
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -129,10 +129,6 @@ struct ConnectionSection: View {
             }
 
             VStack(alignment: .leading, spacing: 12) {
-                Text("Redirect URI: \(model.redirectURI)")
-                    .font(.footnote.monospaced())
-                    .foregroundStyle(.secondary)
-
                 Button {
                     Task { await model.connect() }
                 } label: {
@@ -143,7 +139,8 @@ struct ConnectionSection: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Color(red: 0.85, green: 0.36, blue: 0.18))
+                .tint(TerigoTheme.accent)
+                .disabled(model.isConnecting)
             }
         }
         .padding(20)
@@ -319,31 +316,6 @@ struct LibraryActivityBanner: View {
 
     private var border: Color {
         accent.opacity(colorScheme == .dark ? 0.25 : 0.18)
-    }
-}
-
-struct DisconnectedEmptyState: View {
-    let isImportingGPX: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Once Strava is connected, this screen becomes the full route workspace.")
-                .font(.system(.title3, design: .rounded, weight: .bold))
-
-            Text(descriptionText)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .padding(20)
-        .routePanelSurface(cornerRadius: 28)
-    }
-
-    private var descriptionText: String {
-        if isImportingGPX {
-            return "GPX import is in progress. Starting locations are derived from the first route point in each file."
-        }
-
-        return "You can sync the athlete’s routes from Strava or import GPX files from the top-right menu, then search by start location, sort by distance or climbing, and manage local collections without leaving this page."
     }
 }
 

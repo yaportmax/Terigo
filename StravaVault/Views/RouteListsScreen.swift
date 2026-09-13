@@ -189,10 +189,16 @@ struct RouteListsScreen: View {
             return
         }
 
-        modelContext.insert(RouteList(name: trimmedListName))
-        newListDraft = ""
-        message = nil
-        try? modelContext.save()
+        let list = RouteList(name: trimmedListName)
+        modelContext.insert(list)
+        do {
+            try modelContext.save()
+            newListDraft = ""
+            message = nil
+        } catch {
+            modelContext.delete(list)
+            message = "Couldn’t create the list. \(error.localizedDescription)"
+        }
     }
 
     private func deleteList(_ list: RouteList) {
@@ -276,7 +282,12 @@ private struct RouteListDetailScreen: View {
                     },
                     onToggleRouteList: { route, list in
                         route.listNames = route.toggledListNames(with: list.name)
-                        try? modelContext.save()
+                        do {
+                            try modelContext.save()
+                        } catch {
+                            errorMessage = "Couldn’t save the list change. \(error.localizedDescription)"
+                            return
+                        }
                         statusMessage = route.hasList(named: list.name)
                             ? "Added \(route.name) to \(list.name)."
                             : "Removed \(route.name) from \(list.name)."
@@ -292,10 +303,10 @@ private struct RouteListDetailScreen: View {
                     },
                     onReportError: { message in
                         errorMessage = message
-                    }
-                ) { route in
-                    selectedRoute = route
-                }
+                    },
+                    onSelect: { selectedRoute = $0 },
+                    emptyListName: list.name
+                )
 
                 if !snapshot.missingImportedRoutes.isEmpty {
                     MissingImportedRoutesPanel(references: snapshot.missingImportedRoutes)
@@ -303,37 +314,15 @@ private struct RouteListDetailScreen: View {
             }
             .padding(20)
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            ZStack {
-                Text(list.name)
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .padding(.horizontal, 88)
-
-                HStack(spacing: 12) {
-                    RouteVaultToolbarIconButton(
-                        systemImage: "chevron.left",
-                        accessibilityLabel: "Back",
-                        accessibilityIdentifier: "route-list-go-back"
-                    ) {
-                        dismiss()
-                    }
-
-                    Spacer(minLength: 12)
-
-                    listHeaderOverlay(routes: snapshot.routes)
-                }
-            }
-            .padding(.horizontal, 16)
-            .frame(minHeight: 44)
-            .padding(.top, 8)
-            .padding(.bottom, 8)
-        }
-        .background(Color(.systemBackground).ignoresSafeArea())
-        .navigationTitle("")
+        .scrollDismissesKeyboard(.interactively)
+        .background(TerigoTheme.background.ignoresSafeArea())
+        .navigationTitle(list.name)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                listHeaderOverlay(routes: snapshot.routes)
+            }
+        }
         .accessibilityIdentifier("route-list-detail-screen-\(list.normalizedName.replacingOccurrences(of: " ", with: "-"))")
         .task(id: importedRouteRepairKey) {
             repairImportedRouteMembershipsIfNeeded()
@@ -837,4 +826,3 @@ private enum RouteListMarkdownExportBuilder {
         return lines.joined(separator: "\n")
     }
 }
-

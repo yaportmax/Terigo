@@ -37,11 +37,46 @@ final class StravaVaultCleanUITests: XCTestCase {
         tap(app.alerts.buttons["Create"])
         XCTAssertTrue(app.buttons["route-list-row-autumn-adventures"].waitForExistence(timeout: 8))
         capture("list-created", app)
+        app.buttons["route-list-row-autumn-adventures"].swipeLeft()
+        tap(app.buttons["Delete"])
+        capture("list-delete-confirmation", app)
+        tap(app.buttons["Cancel"])
         tap(app.buttons["route-list-row-autumn-adventures"])
         XCTAssertTrue(app.staticTexts["Autumn Adventures"].waitForExistence(timeout: 8))
         capture("list-empty-detail", app)
         tapTab("Routes", app)
         XCTAssertTrue(app.buttons["route-row-4001"].waitForExistence(timeout: 8))
+    }
+
+    func testTrackingAndMapTools() throws {
+        let app = launch()
+        addUIInterruptionMonitor(withDescription: "Location permission") { alert in
+            let allow = alert.buttons["Allow While Using App"]
+            if allow.exists { allow.tap(); return true }
+            return false
+        }
+        openRoute(app)
+        tap(app.buttons["route-editor-start-activity"])
+        app.tap()
+        XCTAssertTrue(app.buttons["route-tracking-close"].waitForExistence(timeout: 12))
+        capture("tracking-live", app)
+        tap(app.buttons["route-tracking-battery-saver"])
+        capture("tracking-continuous-gps", app)
+        if app.buttons["route-tracking-continuous-gps-not-now"].exists {
+            tap(app.buttons["route-tracking-continuous-gps-not-now"])
+        }
+        tap(app.buttons["route-tracking-close"])
+        if app.buttons["route-tracking-confirm-end"].waitForExistence(timeout: 3) {
+            capture("tracking-end-confirmation", app)
+            tap(app.buttons["route-tracking-confirm-end"])
+        }
+        XCTAssertTrue(app.buttons["route-row-4001"].waitForExistence(timeout: 12))
+        tapTab("Explore", app)
+        tap(app.buttons["Open map full screen"])
+        capture("explore-fullscreen", app)
+        tap(app.buttons["Close"])
+        tap(app.buttons["Search for a place"])
+        capture("explore-place-search", app)
     }
 
     func testOfflineGPXDownload() throws {

@@ -523,6 +523,7 @@ final class RouteLibraryModel {
         let routeID = route.stravaRouteID
         let routeName = route.name.trimmed.nilIfEmpty ?? "Route \(routeID)"
         let shouldBlockStravaResync = !route.isImportedFromGPX
+        let offlineRemoval = try? offlineAssetService.removalPlan(for: route)
 
         do {
             if selectedRoute?.stravaRouteID == routeID {
@@ -532,7 +533,9 @@ final class RouteLibraryModel {
             context.delete(route)
             try context.save()
 
-            try? offlineAssetService.removeOfflineAssets(for: route)
+            if let offlineRemoval {
+                try? offlineAssetService.removeOfflineAssets(using: offlineRemoval)
+            }
 
             if showsStatusMessage, shouldBlockStravaResync {
                 upsertDeletedRoute(
