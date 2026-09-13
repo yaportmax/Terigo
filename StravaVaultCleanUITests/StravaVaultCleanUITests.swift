@@ -4,6 +4,10 @@ import XCTest
 @MainActor
 final class StravaVaultCleanUITests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
+    override func tearDownWithError() throws {
+        if let testRun, testRun.failureCount > 0 { capture("failure-\(name)", XCUIApplication()) }
+        XCUIDevice.shared.orientation = .portrait
+    }
 
     func testVisualTourLight() throws { try visualTour(appearance: "light") }
     func testVisualTourDark() throws { try visualTour(appearance: "dark") }
@@ -104,6 +108,30 @@ final class StravaVaultCleanUITests: XCTestCase {
         capture("offline-saved", app)
     }
 
+    func testRouteDeletedFromListCanBeRestoredForSync() throws {
+        let app = launch()
+        tapTab("Lists", app)
+        tap(app.buttons["route-list-row-weekend-hits"])
+        openRoute(app)
+        let delete = app.buttons["Delete Route"]
+        for _ in 0..<8 {
+            if delete.isHittable { break }
+            app.swipeUp()
+        }
+        tap(delete)
+        capture("route-delete-confirmation", app)
+        tap(app.alerts.buttons["Delete Route"])
+        XCTAssertTrue(waitUntil { !app.buttons["route-editor-start-activity"].exists })
+        tapTab("Routes", app)
+        XCTAssertFalse(app.buttons["route-row-4001"].exists)
+        openSettings(app)
+        tap(app.buttons["route-library-open-deleted-routes"])
+        XCTAssertTrue(app.buttons["Undelete"].waitForExistence(timeout: 8))
+        capture("deleted-route-recovery", app)
+        tap(app.buttons["Undelete"])
+        XCTAssertTrue(app.staticTexts["No Deleted Routes"].waitForExistence(timeout: 8))
+    }
+
     func testWelcomeAndLocalLibrary() throws {
         let app = launch(seed: false)
         XCTAssertTrue(app.buttons["welcome-continue-local"].waitForExistence(timeout: 8))
@@ -125,8 +153,13 @@ final class StravaVaultCleanUITests: XCTestCase {
         capture("accessibility-detail", app)
         tap(app.buttons["Done"])
         XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(waitUntil { app.frame.width > app.frame.height })
         capture("landscape-library", app)
+        tapTab("Explore", app)
+        capture("landscape-explore", app)
         XCUIDevice.shared.orientation = .portrait
+        tapTab("Activities", app)
+        capture("accessibility-activities", app)
     }
 
     private func visualTour(appearance: String) throws {
@@ -196,11 +229,16 @@ final class StravaVaultCleanUITests: XCTestCase {
         app.launchArguments = ["--ui-testing", "--ui-testing-disable-animations", "--ui-appearance=\(appearance)"] + extra
         if seed { app.launchArguments.append("--ui-testing-seed-demo") }
         app.launch()
-        if seed { XCTAssertTrue(app.buttons["route-row-4001"].waitForExistence(timeout: 15)) }
+        if seed { XCTAssertTrue(app.buttons["route-library-import-gpx"].waitForExistence(timeout: 15)) }
         return app
     }
     private func openRoute(_ app: XCUIApplication) {
-        tap(app.buttons["route-row-4001"])
+        let route = app.buttons["route-row-4001"]
+        for _ in 0..<10 {
+            if route.exists && route.isHittable { break }
+            app.swipeUp()
+        }
+        tap(route)
         XCTAssertTrue(app.buttons["route-editor-start-activity"].waitForExistence(timeout: 10))
     }
     private func openSettings(_ app: XCUIApplication) { tap(app.buttons["route-library-settings-button"]) }

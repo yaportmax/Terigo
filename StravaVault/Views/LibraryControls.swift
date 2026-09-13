@@ -7,6 +7,7 @@ import UniformTypeIdentifiers
 import UIKit
 
 struct ControlsSection: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Bindable var model: RouteLibraryModel
     let allRoutes: [RouteRecord]
     let lists: [RouteList]
@@ -24,7 +25,9 @@ struct ControlsSection: View {
             )
             .zIndex(0)
 
-            HStack(spacing: 12) {
+            let layout = dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(spacing: 10)) : AnyLayout(HStackLayout(spacing: 12))
+            layout {
                 ActionControlChip(
                     title: "Sort",
                     value: "",
@@ -48,7 +51,7 @@ struct ControlsSection: View {
             .zIndex(1)
 
             HStack {
-                Text("\(model.filteredRoutes(from: allRoutes).count) routes")
+                Text("\(model.filteredRoutes(from: allRoutes).count) \(model.filteredRoutes(from: allRoutes).count == 1 ? "route" : "routes")")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
                 Text(sortChipValue)

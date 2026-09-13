@@ -362,6 +362,7 @@ struct BannerView: View {
 }
 
 struct SearchField: View {
+    @FocusState private var isFocused: Bool
     @Binding var text: String
     let placeholder: String
 
@@ -370,12 +371,14 @@ struct SearchField: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
             TextField(placeholder, text: $text)
+                .focused($isFocused)
+                .onSubmit { isFocused = false }
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .submitLabel(.search)
                 .accessibilityIdentifier("route-library-search")
             if !text.isEmpty {
-                Button { text = "" } label: {
+                Button { text = ""; isFocused = false } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.secondary)
                         .frame(width: 44, height: 44)
@@ -424,41 +427,23 @@ struct FilterPanel<Content: View>: View {
 
 extension View {
     func routePanelSurface(cornerRadius: CGFloat) -> some View {
-        background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
             )
     }
 
-    @ViewBuilder
     func routeControlSurface(isActive: Bool, cornerRadius: CGFloat) -> some View {
-        if #available(iOS 26.0, *) {
-            self
-                .glassEffect(
-                    isActive
-                        ? .regular.tint(Color(red: 0.95, green: 0.63, blue: 0.48)).interactive()
-                        : .regular.interactive(),
-                    in: .rect(cornerRadius: cornerRadius)
-                )
-                .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        } else {
-            self
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(isActive ? Color(red: 0.95, green: 0.63, blue: 0.48).opacity(0.18) : .clear)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .strokeBorder(
-                            isActive ? Color(red: 0.95, green: 0.63, blue: 0.48).opacity(0.35) : Color.primary.opacity(0.08),
-                            lineWidth: 1
-                        )
-                )
-                .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        }
+        background(isActive ? TerigoTheme.accent.opacity(0.10) : TerigoTheme.surface,
+                   in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(isActive ? TerigoTheme.accent.opacity(0.35) : Color.primary.opacity(0.08), lineWidth: 1)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
+
 }
 
 extension UTType {
@@ -467,13 +452,7 @@ extension UTType {
     }
 }
 
-extension Comparable {
-    func routeClamped(to range: ClosedRange<Self>) -> Self {
-        min(max(self, range.lowerBound), range.upperBound)
-    }
-}
-
-/// Shared semantic colors adapt to appearance and accessibility contrast.
+/// Shared semantic colors adapt to the selected appearance.
 enum TerigoTheme {
     static let accent = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark

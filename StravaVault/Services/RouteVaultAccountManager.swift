@@ -142,7 +142,7 @@ final class RouteVaultAccountManager {
 
         do {
             if AppUITestSupport.shouldUseStubSession {
-                installReviewerDemoState(statusMessage: "Reviewer demo mode is ready.")
+                installReviewerDemoState(statusMessage: AppUITestSupport.isEnabled ? nil : "Reviewer demo mode is ready.")
                 return
             }
 

@@ -1265,7 +1265,6 @@ struct StravaVaultApp: App {
                         Link("Contact Support", destination: URL(string: "mailto:yaportmax@gmail.com")!)
                     }
                     .background(TerigoTheme.background.ignoresSafeArea())
-                    .accessibilityIdentifier("library-storage-error")
                 }
             }
             .tint(TerigoTheme.accent)

@@ -5,6 +5,18 @@ import SwiftData
 
 @MainActor
 final class ActivitiesModelTests: XCTestCase {
+    func testRangeInputRequiresAWholeLocalizedNumber() {
+        let us = Locale(identifier: "en_US")
+        XCTAssertEqual(RouteDisplayFormatter.parseNumericInput("1,234.5", locale: us), 1234.5)
+        XCTAssertEqual(RouteDisplayFormatter.parseNumericInput(".5", locale: us), 0.5)
+        XCTAssertEqual(RouteDisplayFormatter.parseNumericInput("1.234,5", locale: Locale(identifier: "de_DE")), 1234.5)
+        XCTAssertEqual(RouteDisplayFormatter.parseNumericInput("1 234,5", locale: Locale(identifier: "fr_FR")), 1234.5)
+        XCTAssertEqual(RouteDisplayFormatter.parseNumericInput("1,00,000", locale: Locale(identifier: "en_IN")), 100000)
+        for invalid in ["12km", "2-3", "1.2.3", "--1", "NaN", "∞", "1,23", ""] {
+            XCTAssertNil(RouteDisplayFormatter.parseNumericInput(invalid, locale: us), invalid)
+        }
+    }
+
     func testMapAreaContainsRoutesAcrossTheDateLine() {
         let region = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 0, longitude: 179),
                                         span: MKCoordinateSpan(latitudeDelta: 10, longitudeDelta: 8))

@@ -68,6 +68,7 @@ struct RouteEditorSheet: View {
     }
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(RouteLibraryModel.self) private var libraryModel
     @Environment(\.modelContext) private var modelContext
     @AppStorage(RouteTrackingActivityStore.activeRouteIDDefaultsKey) private var activeRouteTrackingRouteID = 0
     @AppStorage(AppMeasurementSystem.storageKey) private var appMeasurementSystemRawValue = AppMeasurementSystem.defaultValue.rawValue
@@ -109,7 +110,6 @@ struct RouteEditorSheet: View {
     private let routeDetailDownloadCoordinator = RouteDetailDownloadCoordinator()
     private let weatherService = RouteWeatherService.shared
     private let elevationBackfillCoordinator = ElevationBackfillCoordinator()
-    var onDelete: (RouteRecord) -> Void = { _ in }
 
     private var offlineStatus: RouteOfflineAssetStatus {
         offlineAssetService.offlineStatus(for: route)
@@ -175,10 +175,9 @@ struct RouteEditorSheet: View {
             } message: {
                 Text("Lists can be renamed, described, and shared later from Manage Lists.")
             }
-            .confirmationDialog(
+            .alert(
                 "Delete Route?",
-                isPresented: $isShowingDeleteConfirmation,
-                titleVisibility: .visible
+                isPresented: $isShowingDeleteConfirmation
             ) {
                 Button("Delete Route", role: .destructive, action: deleteRoute)
                 Button("Cancel", role: .cancel) { }
@@ -578,7 +577,7 @@ struct RouteEditorSheet: View {
         route.routeType = mapping.type
         route.routeSubType = mapping.subType
         route.updatedAt = .now
-        try? modelContext.save()
+        persistRouteChanges()
     }
 
     private var organizationSection: some View {
@@ -793,9 +792,11 @@ struct RouteEditorSheet: View {
     }
 
     private func deleteRoute() {
-        let routeToDelete = route
-        onDelete(routeToDelete)
-        dismiss()
+        if libraryModel.deleteRoute(route, using: modelContext) {
+            dismiss()
+        } else {
+            bannerMessage = BannerMessage(text: libraryModel.errorMessage ?? "The route could not be deleted. Try again.", tone: .error)
+        }
     }
 
     private func toggleList(_ list: RouteList) {

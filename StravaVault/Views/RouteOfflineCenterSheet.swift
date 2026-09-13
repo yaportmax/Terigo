@@ -196,14 +196,7 @@ struct RouteOfflineCenterSheet: View {
         .accessibilityIdentifier("offline-center-screen")
         .sheet(item: $selectedRoute) { route in
             NavigationStack {
-                RouteEditorSheet(
-                    route: route,
-                    onDelete: { routeToDelete in
-                        modelContext.delete(routeToDelete)
-                        try? modelContext.save()
-                        selectedRoute = nil
-                    }
-                )
+                RouteEditorSheet(route: route)
             }
             .presentationDetents([.medium, .large])
         }

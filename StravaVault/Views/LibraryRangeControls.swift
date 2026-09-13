@@ -144,14 +144,14 @@ struct RouteRangePanel: View {
         let draft = (endpoint == .minimum ? minimumDraft : maximumDraft).trimmingCharacters(in: .whitespacesAndNewlines)
         if draft.isEmpty { set(nil, for: endpoint); return }
         guard let value = RouteDisplayFormatter.parseNumericInput(draft), value.isFinite, value >= 0 else {
-            inputError = "Enter a positive number or leave the field empty."
+            inputError = "Enter zero or a positive number, or leave the field empty."
             return
         }
         let valueInStorageUnits = stored(value)
         if endpoint == .minimum, let maximum, valueInStorageUnits > maximum {
-            inputError = "Minimum must be less than maximum."
+            inputError = "Minimum cannot exceed maximum."
         } else if endpoint == .maximum, let minimum, valueInStorageUnits < minimum {
-            inputError = "Maximum must be greater than minimum."
+            inputError = "Maximum cannot be less than minimum."
         } else {
             set(valueInStorageUnits, for: endpoint)
         }

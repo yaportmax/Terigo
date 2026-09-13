@@ -519,50 +519,39 @@ final class RouteLibraryModel {
         }
     }
 
-    func deleteRoute(_ route: RouteRecord, using context: ModelContext, showsStatusMessage: Bool = true) {
+    @discardableResult
+    func deleteRoute(_ route: RouteRecord, using context: ModelContext, showsStatusMessage: Bool = true) -> Bool {
         let routeID = route.stravaRouteID
         let routeName = route.name.trimmed.nilIfEmpty ?? "Route \(routeID)"
         let shouldBlockStravaResync = !route.isImportedFromGPX
         let offlineRemoval = try? offlineAssetService.removalPlan(for: route)
 
+        let wasSelected = selectedRoute?.stravaRouteID == routeID
         do {
-            if selectedRoute?.stravaRouteID == routeID {
-                selectedRoute = nil
-            }
-
             context.delete(route)
             try context.save()
+            if wasSelected { selectedRoute = nil }
 
             if let offlineRemoval {
                 try? offlineAssetService.removeOfflineAssets(using: offlineRemoval)
             }
 
-            if showsStatusMessage, shouldBlockStravaResync {
-                upsertDeletedRoute(
-                    DeletedRouteTombstone(
-                        stravaRouteID: routeID,
-                        name: routeName,
-                        deletedAt: .now
-                    )
-                )
-                statusMessage = "Deleted \(routeName). It won’t sync from Strava again until you undelete it in Deleted Routes."
-            } else if shouldBlockStravaResync {
-                upsertDeletedRoute(
-                    DeletedRouteTombstone(
-                        stravaRouteID: routeID,
-                        name: routeName,
-                        deletedAt: .now
-                    )
-                )
-            } else if showsStatusMessage {
-                statusMessage = "Deleted \(routeName) from your local library."
+            if shouldBlockStravaResync {
+                upsertDeletedRoute(DeletedRouteTombstone(stravaRouteID: routeID, name: routeName, deletedAt: .now))
+            }
+            if showsStatusMessage {
+                statusMessage = shouldBlockStravaResync
+                    ? "Deleted \(routeName). Restore it in Deleted Routes to sync it from Strava again."
+                    : "Deleted \(routeName) from your local library."
             }
 
             if showsStatusMessage {
                 errorMessage = nil
             }
+            return true
         } catch {
             errorMessage = displayMessage(for: error)
+            return false
         }
     }
 

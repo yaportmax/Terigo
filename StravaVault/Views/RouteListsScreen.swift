@@ -137,10 +137,9 @@ struct RouteListsScreen: View {
             Text("A place for your next adventure, training block, or favorite routes.")
         }
         .accessibilityIdentifier("manage-lists-screen")
-        .confirmationDialog(
+        .alert(
             "Delete List?",
-            isPresented: pendingDeletionBinding,
-            titleVisibility: .visible
+            isPresented: pendingDeletionBinding
         ) {
             if let pendingDeletionList {
                 Button("Delete List", role: .destructive) {
@@ -215,6 +214,7 @@ struct RouteListsScreen: View {
 }
 
 private struct RouteListDetailScreen: View {
+    @Environment(RouteLibraryModel.self) private var sharedLibraryModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
@@ -278,7 +278,7 @@ private struct RouteListDetailScreen: View {
                     isSyncing: false,
                     onResetFilters: libraryModel.resetFilters,
                     onDeleteRoute: { route in
-                        libraryModel.deleteRoute(route, using: modelContext)
+                        sharedLibraryModel.deleteRoute(route, using: modelContext)
                     },
                     onToggleRouteList: { route, list in
                         route.listNames = route.toggledListNames(with: list.name)
@@ -314,7 +314,7 @@ private struct RouteListDetailScreen: View {
             }
             .padding(20)
         }
-        .scrollDismissesKeyboard(.interactively)
+        .scrollDismissesKeyboard(.immediately)
         .background(TerigoTheme.background.ignoresSafeArea())
         .navigationTitle(list.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -361,12 +361,7 @@ private struct RouteListDetailScreen: View {
         }
         .sheet(item: $selectedRoute) { route in
             NavigationStack {
-                RouteEditorSheet(
-                    route: route,
-                    onDelete: { routeToDelete in
-                        onDeleteRoute(routeToDelete)
-                    }
-                )
+                RouteEditorSheet(route: route)
             }
             .presentationDetents([.medium, .large])
         }
@@ -376,10 +371,9 @@ private struct RouteListDetailScreen: View {
             }
             .presentationDetents([.medium, .large])
         }
-        .confirmationDialog(
+        .alert(
             "Delete List?",
-            isPresented: $isShowingDeleteConfirmation,
-            titleVisibility: .visible
+            isPresented: $isShowingDeleteConfirmation
         ) {
             Button("Delete List", role: .destructive) {
                 onDeleteList(list)
@@ -554,8 +548,7 @@ private struct RouteListDetailScreen: View {
             return
         }
 
-        list.touch()
-        try? modelContext.save()
+        persistListChanges()
     }
 
     private func visibleBannerMessage(_ value: String?) -> String? {
@@ -642,12 +635,6 @@ private struct RouteListDetailScreen: View {
         } catch {
             errorMessage = error.localizedDescription
         }
-    }
-
-    private func onDeleteRoute(_ route: RouteRecord) {
-        selectedRoute = nil
-        modelContext.delete(route)
-        try? modelContext.save()
     }
 
     @MainActor

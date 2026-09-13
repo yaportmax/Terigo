@@ -411,13 +411,13 @@ private struct SwipeRevealRow<Content: View>: View {
         }
         .clipped()
         .contentShape(Rectangle())
-        .highPriorityGesture(dragGesture)
+        .simultaneousGesture(dragGesture)
         .animation(swipeAnimation, value: settledOffset)
     }
 
     private var rowBackground: some View {
-        Rectangle()
-            .fill(colorScheme == .dark ? Color.black : Color.white.opacity(0.96))
+        RoundedRectangle(cornerRadius: 22, style: .continuous)
+            .fill(TerigoTheme.surface)
     }
 
     private var dragGesture: some Gesture {

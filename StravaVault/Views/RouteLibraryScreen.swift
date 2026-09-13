@@ -176,12 +176,7 @@ struct RouteLibraryScreen: View {
             }
             .sheet(item: selectedRouteBinding) { route in
                 NavigationStack {
-                    RouteEditorSheet(
-                        route: route,
-                        onDelete: { routeToDelete in
-                            model.deleteRoute(routeToDelete, using: modelContext)
-                        }
-                    )
+                    RouteEditorSheet(route: route)
                 }
                 .presentationDetents([.medium, .large], selection: $selectedRoutePresentationDetent)
             }
@@ -231,6 +226,7 @@ struct RouteLibraryScreen: View {
                 allowsMultipleSelection: true,
                 onCompletion: handleGPXImportSelection
             )
+            .environment(model)
     }
 
     private var libraryScrollContent: some View {
@@ -312,7 +308,7 @@ struct RouteLibraryScreen: View {
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
-        .scrollDismissesKeyboard(.interactively)
+        .scrollDismissesKeyboard(.immediately)
         .background(TerigoTheme.background.ignoresSafeArea())
         .accessibilityIdentifier("route-library-screen")
     }

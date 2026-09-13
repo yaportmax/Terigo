@@ -63,7 +63,7 @@ struct ActivitiesScreen: View {
                 .padding(.top, 8)
                 .padding(.bottom, 24)
             }
-            .scrollDismissesKeyboard(.interactively)
+            .scrollDismissesKeyboard(.immediately)
             .refreshable { await model.syncActivities(using: modelContext) }
             .background(TerigoTheme.background.ignoresSafeArea())
             .navigationTitle("Activities")

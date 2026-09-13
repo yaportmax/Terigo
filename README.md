@@ -8,10 +8,11 @@ Terigo is an open-source iPhone app for importing, organizing, saving offline, s
 
 - Strava OAuth with token refresh and Keychain-backed local sessions
 - Route and activity import through the official Strava APIs
+- GPX routes and activities without sign-in, with Apple Maps available in unconfigured builds
 - Offline route library, map detail, GPX import, and offline map bundles
 - Background-capable route tracking with local off-route alerts
 - Search and filters across route names, notes, tags, start areas, sport, surface, distance, and climb
-- Route-start weather, activity sync and upload, coverage views, Spotlight indexing, and data export
+- Route-start weather, activity sync and upload, coverage analysis, Spotlight indexing, and data export
 - Supabase-backed Terigo accounts, shared lists, collaboration, following, and cross-device list sync
 - Public share pages and universal-link-ready handoff
 
@@ -34,11 +35,15 @@ Terigo is an open-source iPhone app for importing, organizing, saving offline, s
 
 - macOS with Xcode 26 or a newer compatible Xcode release
 - iOS 17 or newer
-- A Strava developer application
-- A Mapbox public token
+- Optional: a Strava developer application for Strava sync
+- Optional: a Mapbox public token for Mapbox styles, terrain, and offline map bundles
 - Optional: a Supabase project for accounts and sharing
 
 ## Local setup
+
+For a simulator preview, clone the repository, open `StravaVaultClean.xcodeproj`, run the `StravaVault` scheme, and choose **Continue with GPX files**. Apple Maps and GPX import work without service credentials.
+
+To enable connected services and physical-device signing:
 
 1. Clone the repository.
 2. Copy `Configuration/Secrets.template.xcconfig` to `Configuration/Secrets.xcconfig`.
@@ -54,6 +59,18 @@ Set the Strava redirect URI to:
 ```text
 routevault://localhost/oauth-callback
 ```
+
+## Native validation and visual review
+
+On a Mac with an available iPhone simulator, run:
+
+```shell
+python3 Scripts/validate_ios.py
+```
+
+The GitHub `iOS simulator validation` workflow runs the same build and tests, then exports XCTest screenshots, a test summary, the source commit, and build logs as `terigo-simulator-evidence`. Tests use synthetic routes and activities. The suite covers navigation, local use, offline GPX, tracking, deletion and recovery, light and dark mode, large text, and landscape.
+
+See [the redesign notes](docs/development/terigo-redesign.md) for the feature map and validation limits.
 
 ## Backend setup
 

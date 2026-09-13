@@ -144,13 +144,14 @@ private struct CompactRouteListRow: View {
 }
 
 private struct MediumRouteCardContent: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let route: RouteRecord
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .center, spacing: 14) {
                 RouteTraceThumbnail(coordinates: route.routeCoordinates)
-                    .frame(width: 64, height: 70)
+                    .frame(width: 52, height: 64)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 5) {
                     Text(route.sportDisplayName.uppercased())
@@ -160,7 +161,7 @@ private struct MediumRouteCardContent: View {
                     Text(route.name)
                         .font(.headline)
                         .foregroundStyle(.primary)
-                        .lineLimit(2)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
                     if !route.displayLocation.isEmpty {
                         Text(route.displayLocation)
                             .font(.caption)
@@ -192,12 +193,7 @@ private struct MediumRouteCardContent: View {
             }
             .font(.caption)
             .foregroundStyle(.secondary)
-            if !route.notes.isEmpty {
-                Text(route.notes)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
+
         }
     }
 }
@@ -327,7 +323,7 @@ private struct RouteMetricRow: View {
 
             VStack(alignment: .leading, spacing: size.rowSpacing) {
                 HStack(spacing: size.rowSpacing) {
-                    MetricPill(iconName: route.sportSymbolName, text: RouteDisplayFormatter.distance(route.distanceMeters), size: size)
+                    MetricPill(iconName: "ruler", text: RouteDisplayFormatter.distance(route.distanceMeters), size: size)
                     MetricPill(iconName: "mountain.2.fill", text: RouteDisplayFormatter.climb(route.elevationGainMeters), size: size)
                 }
 
@@ -338,7 +334,7 @@ private struct RouteMetricRow: View {
 
     @ViewBuilder
     private var metricViews: some View {
-        MetricPill(iconName: route.sportSymbolName, text: RouteDisplayFormatter.distance(route.distanceMeters), size: size)
+        MetricPill(iconName: "ruler", text: RouteDisplayFormatter.distance(route.distanceMeters), size: size)
         MetricPill(iconName: "mountain.2.fill", text: RouteDisplayFormatter.climb(route.elevationGainMeters), size: size)
         MetricPill(iconName: "clock.fill", text: RouteDisplayFormatter.duration(route.estimatedMovingTime), size: size)
     }
@@ -524,7 +520,6 @@ private enum RouteCardElementSize {
 }
 
 private struct MetricPill: View {
-    @Environment(\.colorScheme) private var colorScheme
     let iconName: String
     let text: String
     let size: RouteCardElementSize
@@ -537,12 +532,7 @@ private struct MetricPill: View {
         }
         .font(size.metricFont)
         .foregroundStyle(.primary)
-        .padding(.horizontal, size.metricHorizontalPadding)
-        .padding(.vertical, size.metricVerticalPadding)
-        .background(
-            Capsule(style: .continuous)
-                .fill(colorScheme == .dark ? Color.white.opacity(0.10) : Color.black.opacity(0.06))
-        )
+        .padding(.vertical, 4)
     }
 }
 

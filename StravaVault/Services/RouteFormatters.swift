@@ -25,15 +25,6 @@ enum RouteDisplayFormatter {
         return formatter
     }()
 
-    private static let decimalInputFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.locale = .autoupdatingCurrent
-        formatter.usesGroupingSeparator = true
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 0
-        return formatter
-    }()
 
     private static let relativeDateFormatter = RelativeDateTimeFormatter()
 
@@ -112,27 +103,28 @@ enum RouteDisplayFormatter {
         formattedNumber(climbDisplayValue(forFeet: feet), allowsFractionalValue: false)
     }
 
-    static func parseNumericInput(_ string: String) -> Double? {
-        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            return nil
+    static func parseNumericInput(_ string: String, locale: Locale = .autoupdatingCurrent) -> Double? {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.locale = locale
+        formatter.isLenient = false
+        let decimal = NSRegularExpression.escapedPattern(for: formatter.decimalSeparator ?? ".")
+        let groupingSeparator = formatter.groupingSeparator ?? ","
+        let grouping = NSRegularExpression.escapedPattern(for: groupingSeparator)
+        let primaryGroup = max(formatter.groupingSize, 1)
+        let secondaryGroup = formatter.secondaryGroupingSize > 0 ? formatter.secondaryGroupingSize : primaryGroup
+        var input = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        if groupingSeparator.unicodeScalars.allSatisfy(CharacterSet.whitespaces.contains) {
+            for space in [" ", "\u{00A0}", "\u{202F}"] {
+                input = input.replacingOccurrences(of: space, with: groupingSeparator)
+            }
         }
-
-        if let value = decimalInputFormatter.number(from: trimmed)?.doubleValue {
-            return value
-        }
-
-        let allowedCharacters = CharacterSet(charactersIn: "0123456789-+.,")
-        let sanitized = trimmed.unicodeScalars
-            .filter { allowedCharacters.contains($0) }
-            .map(String.init)
-            .joined()
-
-        guard !sanitized.isEmpty else {
-            return nil
-        }
-
-        return decimalInputFormatter.number(from: sanitized)?.doubleValue
+        // NumberFormatter accepts numeric prefixes; require the entire input to be a number.
+        let integer = "(?:\\d+|\\d{1,\(secondaryGroup)}(?:\(grouping)\\d{\(secondaryGroup)})*\(grouping)\\d{\(primaryGroup)})"
+        let pattern = "^[+-]?(?:\(integer)(?:\(decimal)\\d*)?|\(decimal)\\d+)$"
+        guard input.range(of: pattern, options: .regularExpression) != nil,
+              let value = formatter.number(from: input)?.doubleValue, value.isFinite else { return nil }
+        return value
     }
 
     static func duration(_ seconds: Double) -> String {

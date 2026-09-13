@@ -127,11 +127,12 @@ private struct RouteVaultWelcomeScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 32) {
-                Image("TerigoLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 170, alignment: .leading)
-                    .accessibilityLabel("Terigo")
+                HStack(spacing: 10) {
+                    Image("TerigoMark").resizable().scaledToFit().frame(width: 32, height: 32)
+                    Text("Terigo").font(.title2.weight(.bold)).foregroundStyle(.primary)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Terigo")
 
                 ZStack {
                     RoundedRectangle(cornerRadius: 32)
