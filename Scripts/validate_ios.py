@@ -43,9 +43,14 @@ def run_phase(phase, device):
             if any(token in line for token in ("error:", "warning:", "Test Case", "Test Suite", "** ")):
                 print(line, end="", flush=True)
         status = process.wait()
+    event_path = os.environ.get("GITHUB_EVENT_PATH")
+    event = json.loads(Path(event_path).read_text()) if event_path else {}
+    pull_request = event.get("pull_request", {})
     (BUILD / "validation.json").write_text(json.dumps({
         "source_sha": os.environ.get("GITHUB_SHA") or subprocess.check_output(
             ["git", "rev-parse", "HEAD"], text=True).strip(),
+        "head_sha": pull_request.get("head", {}).get("sha"),
+        "base_sha": pull_request.get("base", {}).get("sha"),
         "xcode": subprocess.check_output(["xcodebuild", "-version"], text=True).strip(),
         "device": device["name"], "phase": phase, "passed": phase == "test" and status == 0,
         "signed": False, "data": "synthetic UI test fixtures"

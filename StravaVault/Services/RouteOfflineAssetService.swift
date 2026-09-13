@@ -4,6 +4,49 @@ import MapKit
 import MapboxMaps
 import UIKit
 
+/// Bridges callback APIs without leaving a suspended task behind after cancellation.
+final class OfflineDownloadContinuation<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Value, Error>?
+    private var result: Result<Value, Error>?
+    private var cancellation: (() -> Void)?
+    private var wasCancelled = false
+
+    func install(_ continuation: CheckedContinuation<Value, Error>) {
+        lock.lock()
+        let completed = result
+        if completed == nil { self.continuation = continuation }
+        lock.unlock()
+        if let completed { continuation.resume(with: completed) }
+    }
+
+    func installCancellation(_ cancellation: @escaping () -> Void) {
+        lock.lock()
+        let shouldCancel = wasCancelled
+        if result == nil { self.cancellation = cancellation }
+        lock.unlock()
+        if shouldCancel { cancellation() }
+    }
+
+    func finish(_ result: Result<Value, Error>, cancelled: Bool = false) {
+        lock.lock()
+        guard self.result == nil else { lock.unlock(); return }
+        self.result = result
+        wasCancelled = cancelled
+        let continuation = self.continuation
+        let cancellation = self.cancellation
+        self.continuation = nil
+        self.cancellation = nil
+        lock.unlock()
+        // The SDK may synchronously call its completion when cancelled.
+        if cancelled { cancellation?() }
+        continuation?.resume(with: result)
+        withExtendedLifetime(cancellation) { }
+    }
+
+    func cancel() { finish(.failure(CancellationError()), cancelled: true) }
+}
+
 struct RouteOfflineAssetFiles {
     let gpxRelativePath: String
     let mapSnapshotRelativePath: String?
@@ -1268,23 +1311,8 @@ struct RouteOfflineAssetService {
             seconds: 90,
             stageDescription: "downloading the \(displayName) style"
         ) {
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<StylePack, Error>) in
-                let lock = NSLock()
-                var didResume = false
-                var cancelable: Cancelable?
-
-                func resumeOnce(with result: Result<StylePack, Error>) {
-                    lock.lock()
-                    defer { lock.unlock() }
-                    guard !didResume else {
-                        return
-                    }
-                    didResume = true
-                    cancelable = nil
-                    continuation.resume(with: result)
-                }
-
-                cancelable = offlineManager.loadStylePack(
+            try await Self.cancellableDownload { completion in
+                let cancelable = offlineManager.loadStylePack(
                     for: styleURI,
                     loadOptions: loadOptions,
                     progress: { stylePackProgress in
@@ -1300,10 +1328,9 @@ struct RouteOfflineAssetService {
                             fractionCompleted: fractionCompleted.map { stylePackBase + ($0 * stylePackSpan) }
                         ))
                     },
-                    completion: { result in
-                        resumeOnce(with: result)
-                    }
+                    completion: completion
                 )
+                return { cancelable.cancel() }
             }
         }
     }
@@ -1319,28 +1346,14 @@ struct RouteOfflineAssetService {
             seconds: 180,
             stageDescription: includesTerrain ? "downloading map tiles and 3D terrain" : "downloading map tiles"
         ) {
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<(tileRegion: TileRegion, approximateByteCount: Int64?), Error>) in
-                let lock = NSLock()
-                var didResume = false
-                var cancelable: Cancelable?
+            try await Self.cancellableDownload { completion in
+                let progressLock = NSLock()
                 var capturedByteCount: Int64?
-
-                func resumeOnce(with result: Result<(tileRegion: TileRegion, approximateByteCount: Int64?), Error>) {
-                    lock.lock()
-                    defer { lock.unlock() }
-                    guard !didResume else {
-                        return
-                    }
-                    didResume = true
-                    cancelable = nil
-                    continuation.resume(with: result)
-                }
-
-                cancelable = tileStore.loadTileRegion(
+                let cancelable = tileStore.loadTileRegion(
                     forId: tileRegionID,
                     loadOptions: loadOptions,
                     progress: { tileProgress in
-                        capturedByteCount = Int64(clamping: tileProgress.completedResourceSize)
+                        progressLock.withLock { capturedByteCount = Int64(clamping: tileProgress.completedResourceSize) }
                         let fractionCompleted: Double?
                         if tileProgress.requiredResourceCount > 0 {
                             fractionCompleted = Double(tileProgress.completedResourceCount) / Double(tileProgress.requiredResourceCount)
@@ -1358,10 +1371,25 @@ struct RouteOfflineAssetService {
                         ))
                     },
                     completion: { result in
-                        resumeOnce(with: result.map { ($0, capturedByteCount) })
+                        completion(result.map { ($0, progressLock.withLock { capturedByteCount }) })
                     }
                 )
+                return { cancelable.cancel() }
             }
+        }
+    }
+
+    static func cancellableDownload<T>(
+        _ start: @escaping (@escaping (Result<T, Error>) -> Void) -> (() -> Void)
+    ) async throws -> T {
+        let state = OfflineDownloadContinuation<T>()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                state.install(continuation)
+                state.installCancellation(start { state.finish($0) })
+            }
+        } onCancel: {
+            state.cancel()
         }
     }
 
@@ -1379,9 +1407,8 @@ struct RouteOfflineAssetService {
                 throw AssetError.offlineDownloadTimedOut(stageDescription)
             }
 
-            let result = try await group.next()!
-            group.cancelAll()
-            return result
+            defer { group.cancelAll() }
+            return try await group.next()!
         }
     }
 

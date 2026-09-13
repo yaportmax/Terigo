@@ -47,12 +47,12 @@ To enable connected services and physical-device signing:
 
 1. Clone the repository.
 2. Copy `Configuration/Secrets.template.xcconfig` to `Configuration/Secrets.xcconfig`.
-3. Add your Strava client ID, development-only Strava client secret, and Mapbox public token.
+3. Configure the Strava auth broker URL and, optionally, a Mapbox public token. The public Terigo client ID is `168528`; if you use your own Strava application, replace it with that application’s ID.
 4. If you want account and sharing features, add your Supabase URL, publishable key, Functions URL, and share URL.
 5. Copy `Configuration/DeveloperSigning.template.xcconfig` to `Configuration/DeveloperSigning.xcconfig` and add your Apple Developer Team ID.
 6. Open `StravaVaultClean.xcodeproj` and run the `StravaVault` scheme.
 
-Both local configuration files are ignored by git.
+Both local configuration files are ignored by git. End users connect through Strava OAuth and never enter developer keys. The broker keeps the Strava client secret on the server.
 
 Set the Strava redirect URI to:
 

@@ -452,25 +452,29 @@ private struct ActivityConnectionCard: View {
 
 private struct ActivitySearchField: View {
     @Binding var text: String
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
+                .font(.system(size: 18))
                 .foregroundStyle(.secondary)
-
             TextField("Search activities, places, sports", text: $text)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
-                .foregroundStyle(.primary)
-
+                .focused($isFocused)
+                .submitLabel(.search)
+                .onSubmit { isFocused = false }
+                .accessibilityIdentifier("activities-search")
             if !text.isEmpty {
-                Button {
-                    text = ""
-                } label: {
+                Button { text = ""; isFocused = false } label: {
                     Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 18))
                         .foregroundStyle(.secondary)
+                        .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Clear activity search")
             }
         }
         .padding(.horizontal, 14)
@@ -480,6 +484,7 @@ private struct ActivitySearchField: View {
 }
 
 private struct ActivitiesControlsSection: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Bindable var model: ActivitiesModel
     let allActivities: [ActivityRecord]
     let summary: ActivitiesModel.ActivityListSummarySnapshot
@@ -491,7 +496,8 @@ private struct ActivitiesControlsSection: View {
         VStack(alignment: .leading, spacing: 12) {
             ActivitySearchField(text: $model.query)
 
-            HStack(spacing: 12) {
+            let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 12)) : AnyLayout(HStackLayout(spacing: 12))
+            layout {
                 ActivitiesActionControlChip(
                     title: "Sort",
                     symbolName: model.sortCriteria.first?.option.symbolName ?? ActivitySortCriterion.defaultCriterion.option.symbolName,
@@ -642,7 +648,7 @@ private struct ActivitiesSortSheet: View {
             VStack(alignment: .leading, spacing: 18) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Text("Sort Order")
+                        Text("Priority")
                             .font(.headline.weight(.semibold))
                             .foregroundStyle(.primary)
 
@@ -735,6 +741,7 @@ private struct ActivitiesSortSheet: View {
 }
 
 private struct ActivitiesSortCriterionRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let criterion: ActivitySortCriterion
     let availableOptions: [ActivitySortOption]
     let canMoveUp: Bool
@@ -748,7 +755,8 @@ private struct ActivitiesSortCriterionRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
+            let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 10)) : AnyLayout(HStackLayout(spacing: 10))
+            layout {
                 Menu {
                     ForEach(availableOptions) { option in
                         Button {
@@ -791,11 +799,13 @@ private struct ActivitiesSortCriterionRow: View {
                 .buttonStyle(.plain)
             }
 
-            HStack(spacing: 8) {
+            if canMoveUp || canMoveDown || canRemove {
+              HStack(spacing: 8) {
                 ActivitiesSortReorderButton(symbolName: "arrow.up", isEnabled: canMoveUp, action: onMoveUp)
                 ActivitiesSortReorderButton(symbolName: "arrow.down", isEnabled: canMoveDown, action: onMoveDown)
                 ActivitiesSortReorderButton(symbolName: "minus.circle", isEnabled: canRemove, action: onRemove)
                 Spacer(minLength: 0)
+              }
             }
         }
         .padding(14)
@@ -812,12 +822,13 @@ private struct ActivitiesSortReorderButton: View {
         Button(action: action) {
             Image(systemName: symbolName)
                 .font(.caption.weight(.bold))
-                .foregroundStyle(isEnabled ? .white : .secondary.opacity(0.4))
-                .frame(width: 30, height: 30)
+                .foregroundStyle(isEnabled ? Color.primary : Color.secondary.opacity(0.4))
+                .frame(width: 44, height: 44)
                 .background(Color.primary.opacity(0.05), in: Circle())
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
+        .accessibilityLabel(symbolName == "arrow.up" ? "Move criterion up" : symbolName == "arrow.down" ? "Move criterion down" : "Remove criterion")
     }
 }
 
@@ -875,7 +886,7 @@ private struct ActivitiesFiltersSheet: View {
                     }
 
                     if !availableSports.isEmpty {
-                        LazyVGrid(columns: rangeFieldColumns, spacing: 10) {
+                        VStack(spacing: 8) {
                             ForEach(availableSports) { sport in
                                 ActivitiesSelectionPill(
                                     title: sport.title,
@@ -896,7 +907,7 @@ private struct ActivitiesFiltersSheet: View {
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.primary)
 
-                    LazyVGrid(columns: rangeFieldColumns, spacing: 10) {
+                    VStack(spacing: 8) {
                         ForEach(ActivitySourceKind.allCases, id: \.rawValue) { source in
                             ActivitiesSelectionPill(
                                 title: source.title,
@@ -916,7 +927,7 @@ private struct ActivitiesFiltersSheet: View {
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.primary)
 
-                    HStack(spacing: 10) {
+                    VStack(spacing: 8) {
                         ForEach(ActivityPrivacyFilter.allCases) { filter in
                             ActivitiesSelectionPill(
                                 title: filter.title,
@@ -1156,31 +1167,7 @@ private struct ActivitiesRangeField: View {
 private extension View {
     @ViewBuilder
     func activitiesControlSurface(isActive: Bool, cornerRadius: CGFloat) -> some View {
-        if #available(iOS 26.0, *) {
-            self
-                .glassEffect(
-                    isActive
-                        ? .regular.tint(Color(red: 0.95, green: 0.63, blue: 0.48)).interactive()
-                        : .regular.interactive(),
-                    in: .rect(cornerRadius: cornerRadius)
-                )
-                .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        } else {
-            self
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(isActive ? Color(red: 0.95, green: 0.63, blue: 0.48).opacity(0.18) : .clear)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .strokeBorder(
-                            isActive ? Color(red: 0.95, green: 0.63, blue: 0.48).opacity(0.35) : Color.primary.opacity(0.08),
-                            lineWidth: 1
-                        )
-                )
-                .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        }
+        routeControlSurface(isActive: isActive, cornerRadius: cornerRadius)
     }
 }
 
@@ -1292,12 +1279,14 @@ private struct CompactActivityListRow: View {
 
 private struct ActivityCardRow: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let activity: ActivityRecord
     let density: AppActivityListDensity
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
+            let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10)) : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+            layout {
                 AppIconGlyph(name: activity.sportSymbolName, size: 16)
                     .foregroundStyle(.primary)
                     .frame(width: 28, height: 28)
@@ -1323,11 +1312,12 @@ private struct ActivityCardRow: View {
 
                     Text(activity.sourceKind == .strava ? "Strava" : "Local")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(activity.sourceKind == .strava ? Color.orange : Color(red: 0.61, green: 0.82, blue: 1.0))
+                        .foregroundStyle(activity.sourceKind == .strava ? Color.orange : Color.secondary)
                 }
             }
 
-            HStack(spacing: 10) {
+            let metricLayout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8)) : AnyLayout(HStackLayout(spacing: 10))
+            metricLayout {
                 ActivityMetricChip(iconName: "ruler", value: RouteDisplayFormatter.distance(activity.distanceMeters))
                 ActivityMetricChip(iconName: "mountain.2", value: RouteDisplayFormatter.climb(activity.elevationGainMeters))
                 ActivityMetricChip(iconName: "clock", value: RouteDisplayFormatter.duration(max(activity.movingTime, activity.elapsedTime)))
@@ -1363,12 +1353,14 @@ private struct ActivityCardRow: View {
 
 private struct ExpandedActivityCardRow: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let activity: ActivityRecord
     let density: AppActivityListDensity
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 12) {
+            let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10)) : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+            layout {
                 AppIconGlyph(name: activity.sportSymbolName, size: 18)
                     .foregroundStyle(.primary)
                     .frame(width: 30, height: 30)
@@ -1394,11 +1386,12 @@ private struct ExpandedActivityCardRow: View {
 
                     Text(activity.sourceKind == .strava ? "Strava" : "Local")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(activity.sourceKind == .strava ? Color.orange : Color(red: 0.61, green: 0.82, blue: 1.0))
+                        .foregroundStyle(activity.sourceKind == .strava ? Color.orange : Color.secondary)
                 }
             }
 
-            HStack(spacing: 10) {
+            let metricLayout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8)) : AnyLayout(HStackLayout(spacing: 10))
+            metricLayout {
                 ActivityMetricChip(iconName: "ruler", value: RouteDisplayFormatter.distance(activity.distanceMeters))
                 ActivityMetricChip(iconName: "mountain.2", value: RouteDisplayFormatter.climb(activity.elevationGainMeters))
                 ActivityMetricChip(iconName: "clock", value: RouteDisplayFormatter.duration(max(activity.movingTime, activity.elapsedTime)))

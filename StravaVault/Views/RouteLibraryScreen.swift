@@ -106,130 +106,7 @@ struct RouteLibraryScreen: View {
                                 .accessibilityLabel("Terigo")
                         }
                         ToolbarItem(placement: .topBarTrailing) {
-                            Button {
-                                isShowingGPXImporter = true
-                            } label: {
-                                Label("Import GPX", systemImage: "plus")
-                            }
-                            .disabled(model.isImportingGPX)
-                            .accessibilityIdentifier("route-library-import-gpx")
-                        }
-                        ToolbarItem(placement: .topBarTrailing) {
-                            routeLibrarySettingsMenu
-                        }
-                    }
-                    .refreshable {
-                        if model.isConnected {
-                            await model.syncRoutes(using: modelContext)
-                        }
-                    }
-            }
-            .tabItem { Label("Routes", systemImage: "point.topleft.down.to.point.bottomright.curvepath") }
-            .tag(Tab.routes)
-
-            NavigationStack {
-                RouteMapBrowseSheet(model: model, allRoutes: routes, lists: sortedRouteLists)
-            }
-            .tabItem { Label("Explore", systemImage: "map") }
-            .tag(Tab.explore)
-
-            NavigationStack {
-                RouteListsScreen(onDeleteList: deleteListEverywhere)
-            }
-            .tabItem { Label("Lists", systemImage: "square.stack") }
-            .tag(Tab.lists)
-
-            ActivitiesScreen()
-                .tabItem { Label("Activities", systemImage: "figure.run") }
-                .tag(Tab.activities)
-        }
-        .tint(TerigoTheme.accent)
-            .task {
-                model.migrateLegacyListsIfNeeded(using: modelContext)
-                await model.performInitialSyncIfNeeded(using: modelContext)
-                model.scheduleStartLocationIndexing(using: modelContext)
-            }
-            .task(id: screenshotPresentationSignature) {
-                await applyAppStoreScreenshotPresentationIfNeeded()
-            }
-            .task(id: spotlightIndexSignature) {
-                await RouteSpotlightIndexer.reindex(routes: routes)
-            }
-            .task(id: remoteListSyncSignature) {
-                await syncListsIfPossible()
-            }
-            .task(id: accountManager.pendingSharedListLink.map(sharedListLinkSignature)) {
-                await handlePendingSharedListLink()
-            }
-            .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
-                handleSpotlightActivity(userActivity)
-            }
-            .onOpenURL { url in
-                accountManager.captureIncomingURL(url)
-            }
-            .onChange(of: model.statusMessage) { _, newValue in
-                scheduleStatusBannerDismiss(for: newValue)
-            }
-            .onDisappear {
-                statusBannerDismissTask?.cancel()
-                statusBannerDismissTask = nil
-            }
-            .sheet(item: selectedRouteBinding) { route in
-                NavigationStack {
-                    RouteEditorSheet(route: route)
-                }
-                .presentationDetents([.medium, .large], selection: $selectedRoutePresentationDetent)
-            }
-            .sheet(isPresented: $isShowingDeletedRoutes) {
-                NavigationStack {
-                    DeletedRoutesSheet(model: model)
-                }
-                .presentationDetents([.medium, .large])
-            }
-            .sheet(isPresented: $isShowingDataExportScreen) {
-                NavigationStack {
-                    DataExportScreen()
-                }
-                .presentationDetents([.medium, .large])
-            }
-            .sheet(isPresented: $isShowingOfflineSheet) {
-                NavigationStack {
-                    RouteOfflineCenterSheet(
-                        visibleRoutes: model.filteredRoutes(from: routes)
-                    )
-                }
-                .presentationDetents([.large])
-            }
-            .sheet(isPresented: $isShowingAccountSettings) {
-                NavigationStack {
-                    RouteVaultAccountSettingsSheet()
-                        .environment(accountManager)
-                }
-                .presentationDetents([.fraction(0.76), .large])
-            }
-            .sheet(isPresented: $isShowingFeedbackSheet) {
-                NavigationStack {
-                    RouteVaultFeedbackSheet()
-                        .environment(accountManager)
-                }
-                .presentationDetents([.medium, .large])
-            }
-            .sheet(item: $presentedSharedList) { presentedSharedList in
-                NavigationStack {
-                    SharedRouteListScreen(shareToken: presentedSharedList.shareToken)
-                }
-                .presentationDetents([.large])
-            }
-            .fileImporter(
-                isPresented: $isShowingGPXImporter,
-                allowedContentTypes: [.gpxRoute],
-                allowsMultipleSelection: true,
-                onCompletion: handleGPXImportSelection
-            )
-            .environment(model)
-    }
-
-    private var libraryScrollContent: some View {
+                private var libraryScrollContent: some View {
         let filteredRoutes = model.filteredRoutes(from: routes)
 
         return ScrollView {
@@ -458,13 +335,6 @@ struct RouteLibraryScreen: View {
                     )
                 }
                 .accessibilityIdentifier("route-library-open-offline-center")
-
-                Button {
-                    selectedTab = .lists
-                } label: {
-                    Label("Manage Lists", systemImage: "list.bullet")
-                }
-                .accessibilityIdentifier("route-library-open-manage-lists")
 
                 Button {
                     isShowingGPXImporter = true

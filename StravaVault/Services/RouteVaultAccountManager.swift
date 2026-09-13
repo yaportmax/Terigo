@@ -197,7 +197,7 @@ final class RouteVaultAccountManager {
             if let authError = error as? ASWebAuthenticationSessionError, authError.code == .canceledLogin {
                 return
             }
-            errorMessage = connectErrorMessage(for: error)
+            errorMessage = displayMessage(for: error)
         }
     }
 
@@ -392,28 +392,6 @@ final class RouteVaultAccountManager {
         }
 
         return error.localizedDescription
-    }
-
-    private func connectErrorMessage(for error: Error) -> String {
-        if let authError = error as? ASWebAuthenticationSessionError,
-           authError.code == .canceledLogin {
-            return stravaConnectionCapacityMessage
-        }
-
-        if let authError = error as? StravaAuthSessionCoordinator.AuthError {
-            switch authError {
-            case .missingCallbackURL:
-                return stravaConnectionCapacityMessage
-            case .unableToStart:
-                break
-            }
-        }
-
-        return displayMessage(for: error)
-    }
-
-    private var stravaConnectionCapacityMessage: String {
-        "Strava sign-in did not complete. If Strava showed “Error 403: Limit of connected athletes exceeded,” Terigo has reached Strava’s current new-user connection cap. New Strava sign-ins are blocked until the Strava app quota is increased."
     }
 
     private func handlePersistedSessionUpdate() async {

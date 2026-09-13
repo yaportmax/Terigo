@@ -119,7 +119,7 @@ struct MapOverlayIconButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.headline.weight(.bold))
+                .font(.system(size: 18, weight: .semibold))
                 .frame(width: 44, height: 44)
                 .background(.ultraThinMaterial, in: Circle())
                 .contentShape(Circle())
@@ -910,6 +910,7 @@ struct TerigoNativeMap: View {
     var centerRequest: Int = 0
     var fitRequest: Int = 0
     var followCoordinate: CLLocationCoordinate2D? = nil
+    var followHeading: CLLocationDirection = 0
     var fitInsets: RouteMapFitInsets = .embedded
     var onRegionChange: (MKCoordinateRegion) -> Void = { _ in }
     var onSelectMarker: (String) -> Void = { _ in }
@@ -939,7 +940,7 @@ struct TerigoNativeMap: View {
                         } else {
                             Button { onSelectMarker(marker.id) } label: {
                                 Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
-                                    .font(.headline)
+                                    .font(.system(size: 18, weight: .semibold))
                                     .frame(width: 44, height: 44)
                                     .foregroundStyle(.white)
                                     .background(TerigoTheme.accent, in: Circle())
@@ -972,12 +973,16 @@ struct TerigoNativeMap: View {
             .onChange(of: regionKey) { _, _ in
                 if let requestedRegion { position = .region(requestedRegion) }
             }
-            .onChange(of: centerRequest) { _, _ in position = .userLocation(fallback: .automatic) }
+            .onChange(of: centerRequest) { _, _ in
+                if followCoordinate != nil { followLocation() }
+                else { position = .userLocation(fallback: .automatic) }
+            }
             .onChange(of: fitRequest) { _, _ in
                 position = requestedRegion.map { .region($0) } ?? .automatic
             }
             .onChange(of: followCoordinate?.latitude) { _, _ in followLocation() }
             .onChange(of: followCoordinate?.longitude) { _, _ in followLocation() }
+            .onChange(of: followHeading) { _, _ in followLocation() }
             .onChange(of: perspectiveRawValue) { _, _ in applyPerspective() }
             .onMapCameraChange(frequency: .onEnd) { context in
                 lastCamera = context.camera
@@ -1014,7 +1019,7 @@ struct TerigoNativeMap: View {
     private func followLocation() {
         if let followCoordinate {
             position = .camera(MapCamera(centerCoordinate: followCoordinate, distance: 1400,
-                                         pitch: isThreeDimensional ? 60 : 0))
+                                         heading: max(0, followHeading), pitch: isThreeDimensional ? 60 : 0))
         }
     }
 }

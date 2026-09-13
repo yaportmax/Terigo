@@ -438,7 +438,7 @@ struct RouteMapSettingsButton: View {
             }
         } label: {
             Image(systemName: "slider.horizontal.3")
-                .font(.headline.weight(.bold))
+                .font(.system(size: 18, weight: .semibold))
                 .frame(width: 40, height: 40)
                 .background(.ultraThinMaterial, in: Circle())
         }
@@ -546,6 +546,26 @@ enum AppUITestSupport {
         }
 
         try? context.save()
+        // Synthetic sensor streams exercise the same analysis path as a Strava sync.
+        if let activity = activities.first {
+            Task { @MainActor in
+                let samples = (0...348).map(Double.init)
+                let stream: ([Double]) -> StravaNumericStreamPayload = { .init(data: $0) }
+                let streams = StravaActivityStreamsPayload(
+                    distance: stream(samples.map { activity.distanceMeters * $0 / 348 }),
+                    altitude: stream(samples.map { 12 + $0 * 1.23 + 15 * sin($0 / 20) }),
+                    heartrate: stream(samples.map { 145 + $0 / 30 + 6 * sin($0 / 15) }),
+                    velocitySmooth: stream(samples.map { 3.45 + 0.3 * sin($0 / 20) }),
+                    gradeSmooth: stream(samples.map { Int($0 / 60) % 2 == 0 ? 0.8 : 4.5 }),
+                    moving: stream(samples.map { $0 < 325 ? 1 : 0 }),
+                    temp: stream(samples.map { 18 + $0 / 100 }),
+                    time: stream(samples.map { $0 * 10 })
+                )
+                let analysis = await ActivityEffortAnalysisService.analyze(activity: activity, streams: streams)
+                activity.applyEffortAnalysis(analysis)
+                try? context.save()
+            }
+        }
     }
 
     static func makeStubSession() -> StravaSession {
@@ -584,8 +604,23 @@ enum AppUITestSupport {
         normalizedAccessCode(code) == normalizedReviewDemoAccessCode
     }
 
+    private enum ReviewDemoError: LocalizedError {
+        case libraryNotEmpty
+        var errorDescription: String? {
+            "Demo mode needs an empty library. Your saved routes, activities, and lists have been kept."
+        }
+    }
+
     @MainActor
     static func activateReviewDemo(using context: ModelContext) throws {
+        // Access codes must never replace an existing personal library.
+        let hasRoutes = try context.fetchCount(FetchDescriptor<RouteRecord>()) > 0
+        let hasActivities = try context.fetchCount(FetchDescriptor<ActivityRecord>()) > 0
+        let hasLists = try context.fetchCount(FetchDescriptor<RouteList>()) > 0
+        let hasStartAreas = try context.fetchCount(FetchDescriptor<RouteStartHub>()) > 0
+        guard !hasRoutes, !hasActivities, !hasLists, !hasStartAreas else {
+            throw ReviewDemoError.libraryNotEmpty
+        }
         UserDefaults.standard.set(true, forKey: reviewDemoModeDefaultsKey)
         resetPersistedState()
         try clearStoredModels(in: context)

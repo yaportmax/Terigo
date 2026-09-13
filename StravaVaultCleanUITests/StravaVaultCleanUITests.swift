@@ -59,7 +59,13 @@ final class StravaVaultCleanUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Autumn Adventures"].waitForExistence(timeout: 8))
         capture("list-empty-detail", app)
         tapTab("Routes", app)
-        XCTAssertTrue(app.buttons["route-row-4001"].waitForExistence(timeout: 8))
+        tap(app.buttons["route-actions-4003"])
+        capture("route-actions-menu", app)
+        tap(app.buttons["Add to List"])
+        tap(app.buttons["Autumn Adventures"])
+        tapTab("Lists", app)
+        XCTAssertTrue(app.buttons["route-row-4003"].waitForExistence(timeout: 8))
+        capture("list-route-added-from-menu", app)
     }
 
     func testTrackingAndMapTools() throws {
@@ -83,6 +89,8 @@ final class StravaVaultCleanUITests: XCTestCase {
         if app.buttons["route-tracking-confirm-end"].waitForExistence(timeout: 3) {
             capture("tracking-end-confirmation", app)
             tap(app.buttons["route-tracking-confirm-end"])
+            capture("tracking-finished", app)
+            tap(app.buttons["route-tracking-close"])
         }
         XCTAssertTrue(app.buttons["route-row-4001"].waitForExistence(timeout: 12))
         tapTab("Explore", app)
@@ -99,7 +107,7 @@ final class StravaVaultCleanUITests: XCTestCase {
         openRoute(app)
         tap(app.buttons["Open full screen map"])
         capture("route-fullscreen-map", app)
-        tap(app.buttons["Recenter route"])
+        tap(app.buttons["route-fullscreen-recenter"])
         tap(app.buttons["Close full screen map"])
         tap(app.buttons["Done"])
         tapTab("Lists", app)
@@ -164,6 +172,9 @@ final class StravaVaultCleanUITests: XCTestCase {
         let app = launch(seed: false)
         XCTAssertTrue(app.buttons["welcome-continue-local"].waitForExistence(timeout: 8))
         capture("welcome", app)
+        tap(app.buttons["Connect with Strava"])
+        XCTAssertTrue(app.staticTexts["Strava sign-in isn’t available in this build. Your saved routes and GPX files are still available."].waitForExistence(timeout: 8))
+        capture("welcome-connection-unavailable", app)
         tap(app.buttons["welcome-continue-local"])
         XCTAssertTrue(app.buttons["route-library-import-gpx"].waitForExistence(timeout: 8))
         capture("local-empty-library", app)
@@ -203,11 +214,11 @@ final class StravaVaultCleanUITests: XCTestCase {
         tap(app.buttons["Close"])
         openRoute(app)
         capture("\(appearance)-05-route-overview", app)
-        app.swipeUp()
+        scrollTo(app.staticTexts["route-weather-location"], app)
         capture("\(appearance)-06-route-weather", app)
-        app.swipeUp()
+        scrollTo(app.staticTexts["route-list-membership"], app)
         capture("\(appearance)-07-route-organization", app)
-        app.swipeUp()
+        scrollTo(app.buttons["Open Start in Maps"], app)
         capture("\(appearance)-08-route-tools", app)
         tap(app.buttons["Done"])
         tapTab("Explore", app)
@@ -229,9 +240,9 @@ final class StravaVaultCleanUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["activity-detail-screen-ui-activity-headlands-tempo"].waitForExistence(timeout: 8)
                       || app.scrollViews["activity-detail-screen-ui-activity-headlands-tempo"].exists)
         capture("\(appearance)-15-activity-detail", app)
-        app.swipeUp()
+        scrollTo(app.staticTexts["Heart Rate & Effort"], app)
         capture("\(appearance)-16-activity-analysis", app)
-        app.swipeUp()
+        scrollTo(app.staticTexts["Terrain & Pacing"], app)
         capture("\(appearance)-17-activity-terrain", app)
         tapTab("Routes", app)
         openSettings(app)
@@ -283,8 +294,18 @@ final class StravaVaultCleanUITests: XCTestCase {
         XCTAssertTrue(hittable, "Control is covered or off screen: \(element)", file: file, line: line)
         element.tap()
     }
+    private func scrollTo(_ element: XCUIElement, _ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        for _ in 0..<12 {
+            if element.exists && element.isHittable { return }
+            // The gutter scrolls the page without scrubbing an interactive chart.
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.72))
+                .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.30)))
+        }
+        capture("failure-scrolling-to-section", app)
+        XCTAssertTrue(element.isHittable, "Section was not reachable: \(element)", file: file, line: line)
+    }
     private func capture(_ name: String, _ app: XCUIApplication) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)

@@ -361,7 +361,8 @@ private struct RouteListDetailScreen: View {
             NavigationStack {
                 RouteEditorSheet(route: route)
             }
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.large])
+            .presentationBackground(TerigoTheme.background)
         }
         .sheet(isPresented: $isShowingSharingSheet) {
             NavigationStack {

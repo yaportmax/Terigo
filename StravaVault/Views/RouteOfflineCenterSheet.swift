@@ -152,7 +152,9 @@ struct RouteOfflineCenterSheet: View {
                     }
                 }
 
-                Text("Batch downloads save the default bundle: GPX + Outdoors map. Open a route to choose different map styles or terrain.")
+                Text(RouteVaultMapboxConfiguration.isConfigured
+                     ? "Batch downloads save GPX files and the Outdoors map. Open a route to choose other map styles or terrain."
+                     : "Batch downloads save GPX files for offline navigation. Apple Maps needs a connection to load new map areas.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

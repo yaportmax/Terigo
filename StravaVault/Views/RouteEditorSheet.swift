@@ -155,6 +155,7 @@ struct RouteEditorSheet: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
                 .background(.regularMaterial)
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             }
             .navigationTitle(route.name.trimmed.nilIfEmpty ?? "Route Details")
             .navigationBarTitleDisplayMode(.inline)
@@ -428,6 +429,7 @@ struct RouteEditorSheet: View {
                     HStack(alignment: .top, spacing: 12) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(weatherLocationLabel)
+                                .accessibilityIdentifier("route-weather-location")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.primary)
 
@@ -585,6 +587,7 @@ struct RouteEditorSheet: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Lists")
+                            .accessibilityIdentifier("route-list-membership")
                             .font(.subheadline.weight(.semibold))
 
                         Text(listsSummary)
@@ -1637,6 +1640,7 @@ private struct RouteDetailMapCard: View {
                     fitTrigger: fitTrigger
                 )
                 .frame(height: 250)
+                .allowsHitTesting(false)
                 .clipped()
 
                 Rectangle()
@@ -1652,7 +1656,7 @@ private struct RouteDetailMapCard: View {
                         fitTrigger += 1
                     } label: {
                         Image(systemName: "scope")
-                            .font(.headline.weight(.bold))
+                            .font(.system(size: 18, weight: .semibold))
                             .frame(width: 44, height: 44)
                             .background(.ultraThinMaterial, in: Circle())
                     }
@@ -1661,7 +1665,7 @@ private struct RouteDetailMapCard: View {
 
                     Button(action: onToggleElevationChart) {
                         Image(systemName: isShowingElevationChart ? "eye.slash" : "eye")
-                            .font(.headline.weight(.bold))
+                            .font(.system(size: 18, weight: .semibold))
                             .frame(width: 44, height: 44)
                             .background(.ultraThinMaterial, in: Circle())
                     }
@@ -1670,7 +1674,7 @@ private struct RouteDetailMapCard: View {
 
                     Button(action: onOpenFullScreen) {
                         Image(systemName: "arrow.up.left.and.arrow.down.right")
-                            .font(.headline.weight(.bold))
+                            .font(.system(size: 18, weight: .semibold))
                             .frame(width: 44, height: 44)
                             .background(.ultraThinMaterial, in: Circle())
                     }
@@ -2083,7 +2087,7 @@ struct RouteElevationChartPanel: View {
                                 .foregroundStyle(Color.secondary.opacity(0.24))
                             AxisValueLabel {
                                 if let meters = value.as(Double.self) {
-                                    Text(axisDistanceLabel(for: meters))
+                                    Text(axisDistanceLabel(for: meters)).fixedSize()
                                 }
                             }
                         }
@@ -2096,7 +2100,7 @@ struct RouteElevationChartPanel: View {
                                 .foregroundStyle(Color.secondary.opacity(0.24))
                             AxisValueLabel {
                                 if let meters = value.as(Double.self) {
-                                    Text(axisAltitudeLabel(for: meters))
+                                    Text(axisAltitudeLabel(for: meters)).fixedSize()
                                 }
                             }
                         }
@@ -2697,6 +2701,7 @@ private struct RouteFullScreenMapView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Recenter route")
+                        .accessibilityIdentifier("route-fullscreen-recenter")
 
                         Spacer(minLength: 0)
                     }
@@ -2759,7 +2764,7 @@ private struct RouteFullScreenMapView: View {
                         primaryActionTitle: canDownloadRouteDetails ? routeDetailsActionTitle : nil,
                         onPrimaryAction: canDownloadRouteDetails ? onDownloadRouteDetails : nil,
                         onToggleVisibility: onToggleElevationChart,
-                        sampleOverride: screenshotPreviewSamples
+                        sampleOverride: screenshotPreviewSamples.isEmpty ? nil : screenshotPreviewSamples
                     )
                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                     .background(

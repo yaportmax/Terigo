@@ -54,7 +54,9 @@ jobs:
         with:
           name: terigo-simulator-evidence
           path: |
-            build/screenshots/
+            build/screenshots/*.png
+            build/screenshots/*.json
+            build/screenshots/*.txt
             build/test-summary.json
             build/validation.json
             build/xcodebuild.log

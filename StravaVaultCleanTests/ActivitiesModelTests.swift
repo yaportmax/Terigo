@@ -5,7 +5,84 @@ import SwiftData
 
 @MainActor
 final class ActivitiesModelTests: XCTestCase {
+    func testPercentFormatterConvertsRatiosToPercentages() {
+        XCTAssertEqual(RouteDisplayFormatter.percent(0.5), "50%")
+        XCTAssertEqual(RouteDisplayFormatter.percent(1), "100%")
+        XCTAssertEqual(RouteDisplayFormatter.percent(0), "0%")
+    }
+
+    func testOfflineCancellationFinishesWithoutWaitingForTheSDK() async throws {
+        let started = expectation(description: "Download started")
+        let cancelled = expectation(description: "Underlying request cancelled")
+        let task = Task<Int, Error> {
+            try await RouteOfflineAssetService.cancellableDownload { _ in
+                started.fulfill()
+                return { cancelled.fulfill() }
+            }
+        }
+        let startedResult = await XCTWaiter.fulfillment(of: [started], timeout: 2)
+        XCTAssertEqual(startedResult, .completed)
+        task.cancel()
+        let cancelledResult = await XCTWaiter.fulfillment(of: [cancelled], timeout: 2)
+        XCTAssertEqual(cancelledResult, .completed)
+        do { _ = try await task.value; XCTFail("Expected cancellation") }
+        catch { XCTAssertTrue(error is CancellationError) }
+    }
+
+    func testOfflineCallbackCanCompleteSynchronously() async throws {
+        let result: Int = try await RouteOfflineAssetService.cancellableDownload { completion in
+            completion(.success(42))
+            // An accidental duplicate SDK callback must not resume the continuation twice.
+            completion(.success(99))
+            return { }
+        }
+        XCTAssertEqual(result, 42)
+    }
+
+    func testConcurrentRequestsShareWorkAndFailedRequestsCanRetry() async throws {
+        let cache = StravaAPIService.RequestCache<String, Int>()
+        let counter = RequestAttemptCounter()
+        let values = try await withThrowingTaskGroup(of: Int.self) { group in
+            for _ in 0..<12 {
+                group.addTask {
+                    try await cache.value(for: "shared", lifetime: 30) {
+                        let attempt = await counter.next()
+                        try await Task.sleep(for: .milliseconds(20))
+                        return attempt
+                    }
+                }
+            }
+            var results: [Int] = []
+            for try await result in group { results.append(result) }
+            return results
+        }
+        XCTAssertEqual(values, Array(repeating: 1, count: 12))
+        do {
+            _ = try await cache.value(for: "retry", lifetime: 30) { throw URLError(.timedOut) }
+            XCTFail("Expected the transport failure")
+        } catch { XCTAssertEqual((error as? URLError)?.code, .timedOut) }
+        let retried = try await cache.value(for: "retry", lifetime: 30) { 42 }
+        XCTAssertEqual(retried, 42)
+        let separateAuthorization = try await cache.value(for: "different-account", lifetime: 30) { 7 }
+        XCTAssertEqual(separateAuthorization, 7)
+    }
+
+    func testReviewAccessCodeCannotReplaceAnExistingLibrary() throws {
+        let container = try ModelContainer(for: RouteRecord.self, ActivityRecord.self, RouteList.self, RouteStartHub.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+        context.insert(makeRoute(id: 7001, typeCode: 2, subTypeCode: nil))
+        try context.save()
+        let wasDemoEnabled = AppUITestSupport.isReviewDemoEnabled
+        XCTAssertThrowsError(try AppUITestSupport.activateReviewDemo(using: context))
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<RouteRecord>()), 1)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<RouteRecord>()).first?.stravaRouteID, 7001)
+        XCTAssertEqual(AppUITestSupport.isReviewDemoEnabled, wasDemoEnabled)
+    }
+
     func testStravaPermissionFaultPreservesAValidSession() throws {
+        XCTAssertFalse(StravaAPIService.APIError.missingAuthBroker.requiresSessionReset)
+        XCTAssertFalse(StravaAPIService.APIError.missingCredentials.requiresSessionReset)
         let service = StravaAPIService()
         let url = URL(string: "https://www.strava.com/api/v3/athlete/activities")!
         let response = HTTPURLResponse(url: url, statusCode: 401, httpVersion: nil, headerFields: nil)!
@@ -624,4 +701,9 @@ final class ActivitiesModelTests: XCTestCase {
             acceptedScopes: ["read_all", "activity:read", "activity:read_all"]
         )
     }
+}
+
+private actor RequestAttemptCounter {
+    private var count = 0
+    func next() -> Int { count += 1; return count }
 }

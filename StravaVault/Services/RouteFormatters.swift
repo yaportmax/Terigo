@@ -222,7 +222,7 @@ enum RouteDisplayFormatter {
     }
 
     static func percent(_ value: Double) -> String {
-        let formattedValue = weatherNumberFormatter.string(from: NSNumber(value: value)) ?? "0"
+        let formattedValue = weatherNumberFormatter.string(from: NSNumber(value: value * 100)) ?? "0"
         return "\(formattedValue)%"
     }
 

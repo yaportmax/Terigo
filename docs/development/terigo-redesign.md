@@ -19,7 +19,7 @@ The route-library file is separated into focused files for controls, filters, li
 
 Route thumbnails render a bounded number of points. Search and remote-list sync debounce work and respect cancellation. Save errors remain visible. Route deletion uses the shared library model, preserves Strava deletion tombstones, and captures offline file locations before SwiftData invalidates the record. Library-open errors offer recovery without silently creating an empty replacement store.
 
-Numeric range input must parse in full and respects the user's locale. Map-area filtering handles routes across the date line.
+Numeric range input must parse in full and respects the user's locale. Map-area filtering handles routes across the date line. Cancelled or timed-out Mapbox downloads resume their waiting task and cancel the SDK request. Concurrent Strava refreshes and GPX requests share one task; the bounded GPX cache is partitioned by authorization. Missing permissions or app configuration keep saved credentials intact. A review access code cannot replace an existing library, and exiting demo mode explicitly confirms deletion of its data.
 
 ## Features retained
 
@@ -44,7 +44,7 @@ Simulator fixtures do not verify live Strava credentials, hosted sharing permiss
 
 ## Strava connection check — 13 September 2026
 
-The public client ID is configured as `168528`; no developer secret or test token is bundled. Normal use still goes through Connect with Strava, browser consent, callback-state verification, server token exchange, and Keychain storage. A working auth broker must be configured for release builds. The documented Supabase endpoint could not be reached from this environment, so end-to-end production login is not yet verified.
+The public client ID is configured as `168528`; no developer secret or test token is bundled. Normal use still goes through Connect with Strava, browser consent, callback-state verification, server token exchange, and Keychain storage. A working auth broker must be configured for release builds. The documented Supabase host returned public DNS status `NXDOMAIN` on 13 September 2026 (a Strava hostname control resolved successfully). Restore a live project and configure its broker URL before installing a connected build. End-to-end production login remains unverified.
 
 An authorized, temporary developer token successfully read the athlete profile, route list, route detail, and a valid GPX export. Activity access returned Strava's `activity:read_permission` fault because that token has only `read` scope. The client now distinguishes this permission fault from an invalid session and preserves access to already authorized features. All simulator fixtures remain synthetic.
 

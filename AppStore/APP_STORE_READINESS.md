@@ -15,8 +15,8 @@ The repo can enforce most submission safety checks, but App Store Connect still 
 1. Deploy the Strava auth broker, preferably from `supabase/functions/strava-auth-broker/` on the Supabase project host. The legacy worker template remains at `AppStore/strava-auth-broker.js`.
 2. Set `APPSTORE_STRAVA_AUTH_BROKER_URL` when running the archive helper, or set the release build setting `ROUTE_VAULT_STRAVA_AUTH_BROKER_URL` before archiving in Xcode. Intended production endpoint: `https://jpxinpbqjovazsxrhdkn.supabase.co/functions/v1/strava-auth-broker`.
 3. Keep `ROUTE_VAULT_STRAVA_CLIENT_SECRET` empty for the release build.
-4. In the Strava developer portal, set the app callback URI to `routevault://localhost/oauth-callback`.
-5. Change the Strava developer portal callback domain to the real production host you use for the auth broker. If you deploy the included Supabase function, that host is `jpxinpbqjovazsxrhdkn.supabase.co`.
+4. Keep the native redirect URI and the broker’s `STRAVA_REDIRECT_URI` set to `routevault://localhost/oauth-callback`.
+5. The callback domain corresponds to the redirect URI host, not the token broker host. Strava allows `localhost` and `127.0.0.1` for callbacks; if you change the native callback host, configure that host in the Strava developer portal. See [Strava authentication](https://developers.strava.com/docs/authentication/).
 6. Use the published Terigo support and privacy pages on `https://maxyaport.com/terigo/` in App Store Connect.
 7. Deploy and verify the `delete-account` Edge Function, then test the in-app deletion flow against a disposable account.
 7. Run `AppStore/preflight_release.sh` before every archive. The archive helper runs it automatically.

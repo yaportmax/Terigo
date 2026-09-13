@@ -106,6 +106,7 @@ struct RouteTrackingView: View {
                     TerigoNativeMap(tracks: [route.routeCoordinates, session.breadcrumbCoordinates],
                                     centerRequest: recenterTrigger,
                                     followCoordinate: followsUser ? session.currentLocation?.coordinate : nil,
+                                    followHeading: cameraFollowMode == .courseFollowing ? max(0, session.currentLocation?.course ?? 0) : 0,
                                     onUserInteraction: handleUserCameraInteraction)
                         .ignoresSafeArea()
                 }
@@ -136,7 +137,6 @@ struct RouteTrackingView: View {
             .padding(.bottom, 18)
         }
         .background(Color.black.ignoresSafeArea())
-        .accessibilityIdentifier("route-tracking-screen-\(route.stravaRouteID)")
         .routeTrackingIdleTimerDisabled(session.keepsScreenAwake)
         .interactiveDismissDisabled(true)
         .task {
@@ -144,10 +144,9 @@ struct RouteTrackingView: View {
                 session.startActivity()
             }
         }
-        .confirmationDialog(
+        .alert(
             "End Activity?",
-            isPresented: $isShowingEndConfirmation,
-            titleVisibility: Visibility.visible
+            isPresented: $isShowingEndConfirmation
         ) {
             Button("End Activity", role: .destructive) {
                 session.finishActivity()
@@ -201,7 +200,7 @@ struct RouteTrackingView: View {
             Button(action: handleCloseTapped) {
                 Image(systemName: session.canFinish ? "xmark" : "chevron.down")
                     .font(.headline.weight(.bold))
-                    .frame(width: 42, height: 42)
+                    .frame(width: 44, height: 44)
                     .background(.ultraThinMaterial, in: Circle())
             }
             .buttonStyle(.plain)
@@ -220,7 +219,7 @@ struct RouteTrackingView: View {
                 } label: {
                     Image(systemName: "scope")
                         .font(.headline.weight(.bold))
-                        .frame(width: 42, height: 42)
+                        .frame(width: 44, height: 44)
                         .background(.ultraThinMaterial, in: Circle())
                 }
                 .buttonStyle(.plain)
@@ -339,7 +338,7 @@ struct RouteTrackingView: View {
                         ? Color(red: 0.18, green: 0.82, blue: 0.69)
                         : Color.white
                 )
-                .frame(width: 42, height: 42)
+                .frame(width: 44, height: 44)
                 .background(.ultraThinMaterial, in: Circle())
                 .shadow(color: .black.opacity(0.12), radius: 6, x: 0, y: 1)
         }

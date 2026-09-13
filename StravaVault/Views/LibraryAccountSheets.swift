@@ -11,6 +11,7 @@ struct RouteVaultAccountSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @State private var isConfirmingAccountDeletion = false
+    @State private var isConfirmingDemoExit = false
 
     var body: some View {
         Form {
@@ -21,8 +22,7 @@ struct RouteVaultAccountSettingsSheet: View {
                         .foregroundStyle(.secondary)
 
                     Button("Exit Demo Mode", role: .destructive) {
-                        accountManager.deactivateReviewDemo(using: modelContext)
-                        dismiss()
+                        isConfirmingDemoExit = true
                     }
                 }
             }
@@ -80,6 +80,15 @@ struct RouteVaultAccountSettingsSheet: View {
                         .foregroundStyle(.secondary)
                 }
             }
+        }
+        .alert("Clear the demo library?", isPresented: $isConfirmingDemoExit) {
+            Button("Exit and Clear Demo", role: .destructive) {
+                accountManager.deactivateReviewDemo(using: modelContext)
+                if !accountManager.isReviewerDemoActive { dismiss() }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This removes the demo routes, lists, activities, and offline files, including anything you added during demo mode.")
         }
         .navigationTitle("Account")
         .navigationBarTitleDisplayMode(.inline)
