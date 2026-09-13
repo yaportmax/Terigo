@@ -324,6 +324,35 @@ final class StravaVaultCleanUITests: XCTestCase {
         ], timeout: 8).exists)
     }
 
+    func testVisualTour() throws {
+        let app = launchSeededApp()
+        waitForLibraryReady(in: app)
+        capture("01-library", app: app)
+        app.buttons["route-library-sort-button"].waitAndTap()
+        capture("02-sort", app: app)
+        app.buttons["Close"].waitAndTap()
+        app.buttons["route-library-filters-button"].waitAndTap()
+        capture("03-filters", app: app)
+        app.buttons["Close"].waitAndTap()
+        openRouteEditor(in: app, routeID: 4001, routeName: "Morning Marin Headlands 🌉")
+        capture("04-route-detail", app: app)
+        swipeUpInsideBottomSheet(in: app)
+        capture("05-route-detail-expanded", app: app)
+        app.buttons["Done"].waitAndTap()
+        app.buttons["route-library-open-lists"].waitAndTap()
+        capture("06-lists", app: app)
+        navigateBackToRouteLibrary(in: app)
+        openActivitiesScreen(in: app)
+        capture("07-activities", app: app)
+    }
+
+    private func capture(_ name: String, app: XCUIApplication) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     private func launchSeededApp() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments += [

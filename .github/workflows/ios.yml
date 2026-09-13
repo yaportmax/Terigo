@@ -1,0 +1,41 @@
+name: iOS simulator validation
+
+on:
+  push:
+    branches: [main, 'astra/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  simulator:
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Build, test, and capture the native app
+        run: python3 Scripts/validate_ios.py
+      - name: Export test screenshots
+        if: always()
+        run: |
+          if [ -d build/Terigo.xcresult ]; then
+            xcrun xcresulttool export attachments --path build/Terigo.xcresult --output-path build/screenshots
+            xcrun xcresulttool get test-results summary --path build/Terigo.xcresult > build/test-summary.json
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: terigo-simulator-evidence
+          path: |
+            build/screenshots/
+            build/test-summary.json
+            build/validation.json
+            build/xcodebuild.log
+          retention-days: 7
