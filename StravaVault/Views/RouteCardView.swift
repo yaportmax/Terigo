@@ -1,3 +1,4 @@
+import CoreLocation
 import SwiftUI
 import UIKit
 
@@ -19,14 +20,11 @@ struct RouteCardView: View {
     }
 
     var body: some View {
-        routeCardBody
-            .onTapGesture(perform: onSelect)
-            .accessibilityElement(children: .combine)
-            .accessibilityAddTraits(.isButton)
-            .accessibilityAction {
-                onSelect()
-            }
-        .id("route-card-\(route.stravaRouteID)-\(appMeasurementSystemRawValue)-\(density.rawValue)")
+        Button(action: onSelect) {
+            routeCardBody
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
         .accessibilityIdentifier("route-row-\(route.stravaRouteID)")
     }
 
@@ -55,22 +53,8 @@ struct RouteCardView: View {
     }
 
     private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: density.cardCornerRadius, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: colorScheme == .dark
-                        ? [
-                            Color(red: 0.17, green: 0.18, blue: 0.21).opacity(0.96),
-                            Color(red: 0.11, green: 0.12, blue: 0.14).opacity(0.98)
-                        ]
-                        : [
-                            Color.white.opacity(0.92),
-                            Color(red: 0.96, green: 0.95, blue: 0.92).opacity(0.95)
-                        ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+        RoundedRectangle(cornerRadius: 22, style: .continuous)
+            .fill(TerigoTheme.surface)
     }
 
     private var cardOutline: some View {
@@ -96,7 +80,9 @@ private struct CompactRouteListRow: View {
 
                 Spacer(minLength: 0)
 
-                Image(systemName: "chevron.right")
+                Color.clear
+                    .frame(width: 44, height: 44)
+                    .accessibilityHidden(true)
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.tertiary)
             }
@@ -160,28 +146,127 @@ private struct CompactRouteListRow: View {
 }
 
 private struct MediumRouteCardContent: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let route: RouteRecord
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            RouteTitleBlock(route: route, titleFont: .system(.title3, design: .rounded, weight: .semibold))
-
+        VStack(alignment: .leading, spacing: 16) {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 12) {
+                        routeThumbnail
+                        sportLabel
+                        Spacer(minLength: 44)
+                    }
+                    routeTitle
+                    locationLabel
+                }
+            } else {
+                HStack(alignment: .top, spacing: 12) {
+                    routeThumbnail
+                    VStack(alignment: .leading, spacing: 5) {
+                        sportLabel
+                        routeTitle
+                        locationLabel
+                    }
+                    Spacer(minLength: 44)
+                }
+            }
             RouteMetricRow(route: route, size: .regular)
-
-            RouteBadgeRow(route: route, size: .regular)
-
-            if route.hasLists {
-                RouteTagCapsules(tags: Array(route.listNames.prefix(3)), size: .regular, allowsHorizontalScroll: false)
+            HStack(spacing: 8) {
+                if route.hasOfflineAssets {
+                    Label("Offline", systemImage: "arrow.down.circle.fill")
+                        .foregroundStyle(TerigoTheme.accent)
+                }
+                if route.isPrivate {
+                    Image(systemName: "lock.fill")
+                        .accessibilityLabel("Private route")
+                }
+                if let surface = route.surfaceDisplayName { Text(surface) }
+                Spacer(minLength: 0)
+                if let list = route.listNames.first {
+                    Label(list, systemImage: "square.stack")
+                        .lineLimit(1)
+                }
             }
+            .font(.caption)
+            .foregroundStyle(.secondary)
 
-            if !route.notes.isEmpty {
-                Text(route.notes)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+        }
+    }
+    private var routeThumbnail: some View {
+        RouteTraceThumbnail(coordinates: route.routeCoordinates)
+            .frame(width: 52, height: 64)
+            .accessibilityHidden(true)
+    }
+    private var sportLabel: some View {
+        Text(route.sportDisplayName.uppercased())
+            .font(.caption2.weight(.bold))
+            .tracking(1)
+            .foregroundStyle(TerigoTheme.accent)
+    }
+    private var routeTitle: some View {
+        Text(route.name)
+            .font(.headline)
+            .foregroundStyle(.primary)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+    @ViewBuilder private var locationLabel: some View {
+        if !route.displayLocation.isEmpty {
+            Text(route.displayLocation).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+        }
+    }
+
+}
+
+/// A local route outline makes each card recognizable without tile requests.
+struct RouteTraceThumbnail: View {
+    let coordinates: [CLLocationCoordinate2D]
+
+    var body: some View {
+        GeometryReader { geometry in
+            let points = projectedPoints(in: geometry.size)
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(TerigoTheme.accent.opacity(0.08))
+                Path { path in
+                    guard let first = points.first else { return }
+                    path.move(to: first)
+                    path.addLines(points)
+                }
+                .stroke(TerigoTheme.accent, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                if let first = points.first {
+                    Circle().fill(TerigoTheme.accent).frame(width: 7, height: 7).position(first)
+                } else {
+                    Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
+                        .foregroundStyle(TerigoTheme.accent)
+                }
             }
+        }
+    }
 
-            RouteFooterLine(route: route)
+    private func projectedPoints(in size: CGSize) -> [CGPoint] {
+        // A tiny thumbnail needs a bounded number of points, even for all-day tracks.
+        let strideSize = max(1, Int(ceil(Double(coordinates.count) / 180)))
+        var sampled = stride(from: 0, to: coordinates.count, by: strideSize).map { coordinates[$0] }
+        if let last = coordinates.last { sampled.append(last) }
+        let valid = sampled.filter(CLLocationCoordinate2DIsValid)
+        guard let origin = valid.first else { return [] }
+        let scale = max(cos(origin.latitude * .pi / 180), 0.01)
+        // Unwrap around the start so routes crossing the date line stay compact.
+        let points = valid.map { coordinate in
+            let longitude = (coordinate.longitude - origin.longitude + 540).truncatingRemainder(dividingBy: 360) - 180
+            return CGPoint(x: longitude * scale, y: -coordinate.latitude)
+        }
+        let minX = points.map(\.x).min() ?? 0
+        let maxX = points.map(\.x).max() ?? 0
+        let minY = points.map(\.y).min() ?? 0
+        let maxY = points.map(\.y).max() ?? 0
+        let factor = min((size.width - 20) / max(maxX - minX, 0.00001), (size.height - 20) / max(maxY - minY, 0.00001))
+        return points.map {
+            CGPoint(x: ($0.x - (minX + maxX) / 2) * factor + size.width / 2,
+                    y: ($0.y - (minY + maxY) / 2) * factor + size.height / 2)
         }
     }
 }
@@ -241,7 +326,9 @@ private struct RouteTitleBlock: View {
 
             Spacer(minLength: 0)
 
-            Image(systemName: "chevron.right")
+            Color.clear
+                    .frame(width: 44, height: 44)
+                    .accessibilityHidden(true)
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.tertiary)
         }
@@ -249,29 +336,34 @@ private struct RouteTitleBlock: View {
 }
 
 private struct RouteMetricRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let route: RouteRecord
     let size: RouteCardElementSize
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: size.rowSpacing) {
-                metricViews
-            }
-
-            VStack(alignment: .leading, spacing: size.rowSpacing) {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: size.rowSpacing) { metricViews }
+        } else {
+            ViewThatFits(in: .horizontal) {
                 HStack(spacing: size.rowSpacing) {
-                    MetricPill(iconName: route.sportSymbolName, text: RouteDisplayFormatter.distance(route.distanceMeters), size: size)
-                    MetricPill(iconName: "mountain.2.fill", text: RouteDisplayFormatter.climb(route.elevationGainMeters), size: size)
+                    metricViews
                 }
 
-                MetricPill(iconName: "clock.fill", text: RouteDisplayFormatter.duration(route.estimatedMovingTime), size: size)
+                VStack(alignment: .leading, spacing: size.rowSpacing) {
+                    HStack(spacing: size.rowSpacing) {
+                        MetricPill(iconName: "ruler", text: RouteDisplayFormatter.distance(route.distanceMeters), size: size)
+                        MetricPill(iconName: "mountain.2.fill", text: RouteDisplayFormatter.climb(route.elevationGainMeters), size: size)
+                    }
+
+                    MetricPill(iconName: "clock.fill", text: RouteDisplayFormatter.duration(route.estimatedMovingTime), size: size)
+                }
             }
         }
     }
 
     @ViewBuilder
     private var metricViews: some View {
-        MetricPill(iconName: route.sportSymbolName, text: RouteDisplayFormatter.distance(route.distanceMeters), size: size)
+        MetricPill(iconName: "ruler", text: RouteDisplayFormatter.distance(route.distanceMeters), size: size)
         MetricPill(iconName: "mountain.2.fill", text: RouteDisplayFormatter.climb(route.elevationGainMeters), size: size)
         MetricPill(iconName: "clock.fill", text: RouteDisplayFormatter.duration(route.estimatedMovingTime), size: size)
     }
@@ -329,7 +421,9 @@ private struct RouteFooterLine: View {
 
             Spacer(minLength: 0)
 
-            Image(systemName: "chevron.right")
+            Color.clear
+                    .frame(width: 44, height: 44)
+                    .accessibilityHidden(true)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.tertiary)
         }
@@ -457,7 +551,6 @@ private enum RouteCardElementSize {
 }
 
 private struct MetricPill: View {
-    @Environment(\.colorScheme) private var colorScheme
     let iconName: String
     let text: String
     let size: RouteCardElementSize
@@ -470,12 +563,7 @@ private struct MetricPill: View {
         }
         .font(size.metricFont)
         .foregroundStyle(.primary)
-        .padding(.horizontal, size.metricHorizontalPadding)
-        .padding(.vertical, size.metricVerticalPadding)
-        .background(
-            Capsule(style: .continuous)
-                .fill(colorScheme == .dark ? Color.white.opacity(0.10) : Color.black.opacity(0.06))
-        )
+        .padding(.vertical, 4)
     }
 }
 
@@ -527,7 +615,7 @@ private struct CapsuleLabel: View {
     private var foreground: Color {
         switch tone {
         case .accent:
-            return Color(red: 0.73, green: 0.29, blue: 0.14)
+            return TerigoTheme.accent
         case .neutral:
             return colorScheme == .dark ? Color.white.opacity(0.72) : .secondary
         }

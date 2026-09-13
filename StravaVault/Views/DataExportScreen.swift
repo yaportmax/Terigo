@@ -90,7 +90,7 @@ struct DataExportScreen: View {
             .padding(20)
         }
         .accessibilityIdentifier("export-data-screen")
-        .background(Color.black.ignoresSafeArea())
+        .background(TerigoTheme.background.ignoresSafeArea())
         .navigationTitle("Export Data")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -114,21 +114,21 @@ struct DataExportScreen: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Take your Strava and Terigo history with you.")
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             Text(helperCopy)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
         .padding(16)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private var datasetCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Dataset")
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             VStack(spacing: 10) {
                 ForEach(DataExportDataset.allCases) { dataset in
@@ -138,13 +138,13 @@ struct DataExportScreen: View {
                         HStack(spacing: 12) {
                             Image(systemName: dataset.symbolName)
                                 .font(.system(size: 17, weight: .semibold))
-                                .foregroundStyle(selectedDataset == dataset ? Color.black : .white)
+                                .foregroundStyle(selectedDataset == dataset ? Color.black : .primary)
                                 .frame(width: 26, height: 26)
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(dataset.title)
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(selectedDataset == dataset ? Color.black : .white)
+                                    .foregroundStyle(selectedDataset == dataset ? Color.black : .primary)
 
                                 Text(dataset.subtitle)
                                     .font(.caption)
@@ -164,7 +164,7 @@ struct DataExportScreen: View {
                         .background(
                             selectedDataset == dataset
                                 ? Color(red: 1.0, green: 0.67, blue: 0.48)
-                                : Color.white.opacity(0.04),
+                                : TerigoTheme.surface,
                             in: RoundedRectangle(cornerRadius: 18, style: .continuous)
                         )
                     }
@@ -173,14 +173,14 @@ struct DataExportScreen: View {
             }
         }
         .padding(16)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private var formatCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Format")
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             HStack(spacing: 10) {
                 ForEach(availableFormats) { format in
@@ -193,13 +193,13 @@ struct DataExportScreen: View {
                             Text(format.title)
                                 .font(.subheadline.weight(.semibold))
                         }
-                        .foregroundStyle(selectedFormat == format ? Color.black : .white)
+                        .foregroundStyle(selectedFormat == format ? Color.black : .primary)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
                         .background(
                             selectedFormat == format
                                 ? Color(red: 1.0, green: 0.67, blue: 0.48)
-                                : Color.white.opacity(0.05),
+                                : Color.primary.opacity(0.05),
                             in: Capsule()
                         )
                     }
@@ -212,20 +212,20 @@ struct DataExportScreen: View {
                 .foregroundStyle(.secondary)
         }
         .padding(16)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private var scopeCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Scope")
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             Toggle(isOn: $includeLocalActivities) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Include local imports and uploads")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     Text("Turn this off to export only Strava-synced activities.")
                         .font(.caption)
@@ -240,14 +240,14 @@ struct DataExportScreen: View {
                 .foregroundStyle(.secondary)
         }
         .padding(16)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Summary")
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             HStack(spacing: 12) {
                 DataExportMetric(title: "Records", value: RouteDisplayFormatter.compactCount(exportableItemCount))
@@ -260,7 +260,7 @@ struct DataExportScreen: View {
                 .foregroundStyle(.secondary)
         }
         .padding(16)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private var exportActionCard: some View {
@@ -306,7 +306,7 @@ struct DataExportScreen: View {
             }
         }
         .padding(16)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private var suggestedFilename: String {
@@ -601,14 +601,14 @@ private struct DataExportMetric: View {
 
             Text(value)
                 .font(.subheadline.weight(.bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .lineLimit(2)
                 .minimumScaleFactor(0.75)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 

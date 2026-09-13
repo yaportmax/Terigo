@@ -68,6 +68,8 @@ struct RouteEditorSheet: View {
     }
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(RouteLibraryModel.self) private var libraryModel
     @Environment(\.modelContext) private var modelContext
     @AppStorage(RouteTrackingActivityStore.activeRouteIDDefaultsKey) private var activeRouteTrackingRouteID = 0
     @AppStorage(AppMeasurementSystem.storageKey) private var appMeasurementSystemRawValue = AppMeasurementSystem.defaultValue.rawValue
@@ -97,7 +99,7 @@ struct RouteEditorSheet: View {
     @State private var offlineStatusRevision = 0
     @State private var offlineDownloadSelection = RouteOfflineDownloadSelection(
         includesGPX: true,
-        mapStyles: [AppRouteMapStyle.defaultValue],
+        mapStyles: RouteVaultMapboxConfiguration.isConfigured ? [AppRouteMapStyle.defaultValue] : [],
         includesTerrain: false
     )
     @State private var didApplyScreenshotPresentation = false
@@ -109,7 +111,6 @@ struct RouteEditorSheet: View {
     private let routeDetailDownloadCoordinator = RouteDetailDownloadCoordinator()
     private let weatherService = RouteWeatherService.shared
     private let elevationBackfillCoordinator = ElevationBackfillCoordinator()
-    var onDelete: (RouteRecord) -> Void = { _ in }
 
     private var offlineStatus: RouteOfflineAssetStatus {
         offlineAssetService.offlineStatus(for: route)
@@ -120,16 +121,44 @@ struct RouteEditorSheet: View {
             Form {
                 bannerSection
                 mapSection
-                actionsSection
+                summarySection
                 overviewSection
                     .id(ScreenshotAnchor.overviewSection.rawValue)
                 weatherSection
                     .id(ScreenshotAnchor.weatherSection.rawValue)
                 organizationSection
                 notesSection
+                actionsSection
                 deleteSection
             }
-            .accessibilityIdentifier("route-editor-screen-\(route.stravaRouteID)")
+            .scrollContentBackground(.hidden)
+            .background(TerigoTheme.background.ignoresSafeArea())
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                HStack(spacing: 12) {
+                    Button(action: presentDownloadOptions) {
+                        Image(systemName: offlineStatus.hasAnyAssets ? "checkmark.circle" : "arrow.down.circle")
+                            .font(.title2)
+                            .frame(width: 52, height: 52)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isDownloadDisabled)
+                    .accessibilityLabel("Offline download options")
+                    .accessibilityIdentifier("route-editor-open-offline-download")
+                    Button(action: startActivity) {
+                        Label("Start Activity", systemImage: "play.fill")
+                            .font(.headline)
+                            .foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(route.routeCoordinates.count < 2)
+                    .accessibilityIdentifier("route-editor-start-activity")
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(.regularMaterial)
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+            }
             .navigationTitle(route.name.trimmed.nilIfEmpty ?? "Route Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -148,10 +177,9 @@ struct RouteEditorSheet: View {
             } message: {
                 Text("Lists can be renamed, described, and shared later from Manage Lists.")
             }
-            .confirmationDialog(
+            .alert(
                 "Delete Route?",
-                isPresented: $isShowingDeleteConfirmation,
-                titleVisibility: .visible
+                isPresented: $isShowingDeleteConfirmation
             ) {
                 Button("Delete Route", role: .destructive, action: deleteRoute)
                 Button("Cancel", role: .cancel) { }
@@ -203,7 +231,8 @@ struct RouteEditorSheet: View {
                         }
                     )
                 }
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
+                .presentationBackground(TerigoTheme.background)
                 .presentationDragIndicator(.visible)
             }
             .onAppear {
@@ -267,7 +296,7 @@ struct RouteEditorSheet: View {
     }
 
     private var actionsSection: some View {
-        Section("Actions") {
+        Section("Route tools") {
             if offlineStatus.hasAnyAssets {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Saved Offline")
@@ -292,12 +321,6 @@ struct RouteEditorSheet: View {
                 .padding(.vertical, 4)
             }
 
-            Button(action: startActivity) {
-                Label("Start Activity", systemImage: "figure.walk.motion")
-            }
-            .accessibilityIdentifier("route-editor-start-activity")
-            .disabled(route.routeCoordinates.count < 2)
-
             if let url = route.routeURL {
                 Link(destination: url) {
                     Label("Open in Strava", systemImage: "arrow.up.right.square")
@@ -318,12 +341,6 @@ struct RouteEditorSheet: View {
             }
             .disabled(route.startCoordinate == nil)
 
-            Button(action: presentDownloadOptions) {
-                Label(detailDownloadButtonTitle, systemImage: "arrow.down.circle")
-            }
-            .accessibilityIdentifier("route-editor-open-offline-download")
-            .disabled(isDownloadDisabled)
-
             if route.hasOfflineAssets {
                 Button(role: .destructive, action: removeOfflineDownload) {
                     Label("Remove Download", systemImage: "trash")
@@ -339,6 +356,36 @@ struct RouteEditorSheet: View {
             }
         }
         .id("route-editor-actions-\(route.stravaRouteID)-\(offlineStatusRevision)")
+    }
+
+    private var summarySection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(route.name)
+                    .font(.title2.weight(.bold))
+                    .fixedSize(horizontal: false, vertical: true)
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: 24) { summaryMetrics }
+                    VStack(alignment: .leading, spacing: 12) { summaryMetrics }
+                }
+            }
+            .padding(.vertical, 8)
+        }
+    }
+
+    @ViewBuilder
+    private var summaryMetrics: some View {
+        summaryMetric("Distance", value: RouteDisplayFormatter.distance(route.distanceMeters))
+        summaryMetric("Elevation gain", value: RouteDisplayFormatter.climb(route.elevationGainMeters))
+        summaryMetric("Est. time", value: RouteDisplayFormatter.duration(route.estimatedMovingTime))
+    }
+
+    private func summaryMetric(_ title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(value).font(.title3.weight(.semibold)).monospacedDigit()
+            Text(title).font(.caption).foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
     }
 
     private var overviewSection: some View {
@@ -370,9 +417,6 @@ struct RouteEditorSheet: View {
                 }
                 .buttonStyle(.plain)
             }
-            LabeledContent("Distance", value: RouteDisplayFormatter.distance(route.distanceMeters))
-            LabeledContent("Climb", value: RouteDisplayFormatter.climb(route.elevationGainMeters))
-            LabeledContent("Estimated Time", value: RouteDisplayFormatter.duration(route.estimatedMovingTime))
             LabeledContent("Updated", value: RouteDisplayFormatter.absoluteDate(route.primaryTimestamp))
         }
     }
@@ -388,6 +432,7 @@ struct RouteEditorSheet: View {
                     HStack(alignment: .top, spacing: 12) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(weatherLocationLabel)
+                                .accessibilityIdentifier("route-weather-location")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.primary)
 
@@ -429,7 +474,7 @@ struct RouteEditorSheet: View {
                             apparentTemperatureText: RouteDisplayFormatter.weatherTemperature(snapshot.current.apparentTemperature),
                             observedTimeText: weatherTimeText(for: snapshot.current.observedAt, in: snapshot),
                             windText: RouteDisplayFormatter.weatherWindSpeed(snapshot.current.windSpeed),
-                            humidityText: snapshot.current.humidityPercent.map(RouteDisplayFormatter.percent)
+                            humidityText: snapshot.current.humidityPercent.map { RouteDisplayFormatter.percent($0 / 100) }
                         )
 
                         let forecastDays = weatherForecastDisplayDays(from: snapshot)
@@ -536,7 +581,7 @@ struct RouteEditorSheet: View {
         route.routeType = mapping.type
         route.routeSubType = mapping.subType
         route.updatedAt = .now
-        try? modelContext.save()
+        persistRouteChanges()
     }
 
     private var organizationSection: some View {
@@ -545,6 +590,7 @@ struct RouteEditorSheet: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Lists")
+                            .accessibilityIdentifier("route-list-membership")
                             .font(.subheadline.weight(.semibold))
 
                         Text(listsSummary)
@@ -742,14 +788,20 @@ struct RouteEditorSheet: View {
     }
 
     private func saveAndDismiss() {
-        try? modelContext.save()
-        dismiss()
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            bannerMessage = BannerMessage(text: "Your changes could not be saved. \(error.localizedDescription)", tone: .error)
+        }
     }
 
     private func deleteRoute() {
-        let routeToDelete = route
-        onDelete(routeToDelete)
-        dismiss()
+        if libraryModel.deleteRoute(route, using: modelContext) {
+            dismiss()
+        } else {
+            bannerMessage = BannerMessage(text: libraryModel.errorMessage ?? "The route could not be deleted. Try again.", tone: .error)
+        }
     }
 
     private func toggleList(_ list: RouteList) {
@@ -889,7 +941,7 @@ struct RouteEditorSheet: View {
         let hasSavedGPX = offlineStatus.hasGPX
         offlineDownloadSelection = RouteOfflineDownloadSelection(
             includesGPX: hasSavedGPX || downloadedStyles.isEmpty,
-            mapStyles: downloadedStyles.isEmpty ? (hasSavedGPX ? [] : [currentAppRouteMapStyle]) : downloadedStyles,
+            mapStyles: downloadedStyles.isEmpty ? (hasSavedGPX || !RouteVaultMapboxConfiguration.isConfigured ? [] : [currentAppRouteMapStyle]) : downloadedStyles,
             includesTerrain: offlineStatus.includesTerrain
         )
         isShowingDownloadOptions = true
@@ -1030,7 +1082,8 @@ struct RouteEditorSheet: View {
     }
 
     private func persistRouteChanges() {
-        try? modelContext.save()
+        do { try modelContext.save() }
+        catch { bannerMessage = BannerMessage(text: error.localizedDescription, tone: .error) }
     }
 
     @MainActor
@@ -1590,12 +1643,12 @@ private struct RouteDetailMapCard: View {
                     fitTrigger: fitTrigger
                 )
                 .frame(height: 250)
+                .allowsHitTesting(false)
                 .clipped()
 
                 Rectangle()
                     .fill(cardFillColor)
                     .frame(height: 7)
-                    .frame(maxHeight: .infinity, alignment: .top)
                     .allowsHitTesting(false)
 
                 HStack(spacing: 10) {
@@ -1605,8 +1658,8 @@ private struct RouteDetailMapCard: View {
                         fitTrigger += 1
                     } label: {
                         Image(systemName: "scope")
-                            .font(.headline.weight(.bold))
-                            .frame(width: 40, height: 40)
+                            .font(.system(size: 18, weight: .semibold))
+                            .frame(width: 44, height: 44)
                             .background(.ultraThinMaterial, in: Circle())
                     }
                     .buttonStyle(.plain)
@@ -1614,8 +1667,8 @@ private struct RouteDetailMapCard: View {
 
                     Button(action: onToggleElevationChart) {
                         Image(systemName: isShowingElevationChart ? "eye.slash" : "eye")
-                            .font(.headline.weight(.bold))
-                            .frame(width: 40, height: 40)
+                            .font(.system(size: 18, weight: .semibold))
+                            .frame(width: 44, height: 44)
                             .background(.ultraThinMaterial, in: Circle())
                     }
                     .buttonStyle(.plain)
@@ -1623,8 +1676,8 @@ private struct RouteDetailMapCard: View {
 
                     Button(action: onOpenFullScreen) {
                         Image(systemName: "arrow.up.left.and.arrow.down.right")
-                            .font(.headline.weight(.bold))
-                            .frame(width: 40, height: 40)
+                            .font(.system(size: 18, weight: .semibold))
+                            .frame(width: 44, height: 44)
                             .background(.ultraThinMaterial, in: Circle())
                     }
                     .buttonStyle(.plain)
@@ -2036,7 +2089,7 @@ struct RouteElevationChartPanel: View {
                                 .foregroundStyle(Color.secondary.opacity(0.24))
                             AxisValueLabel {
                                 if let meters = value.as(Double.self) {
-                                    Text(axisDistanceLabel(for: meters))
+                                    Text(axisDistanceLabel(for: meters)).fixedSize()
                                 }
                             }
                         }
@@ -2049,14 +2102,14 @@ struct RouteElevationChartPanel: View {
                                 .foregroundStyle(Color.secondary.opacity(0.24))
                             AxisValueLabel {
                                 if let meters = value.as(Double.self) {
-                                    Text(axisAltitudeLabel(for: meters))
+                                    Text(axisAltitudeLabel(for: meters)).fixedSize()
                                 }
                             }
                         }
                     }
                     .chartOverlay { proxy in
                         GeometryReader { geometry in
-                            Rectangle()
+                            let selectionSurface = Rectangle()
                                 .fill(.clear)
                                 .contentShape(Rectangle())
                                 .simultaneousGesture(
@@ -2070,6 +2123,10 @@ struct RouteElevationChartPanel: View {
                                             )
                                         }
                                 )
+                            if panelStyle == .embedded {
+                                selectionSurface
+                            } else {
+                                selectionSurface
                                 .simultaneousGesture(
                                     DragGesture(minimumDistance: 6)
                                         .onChanged { value in
@@ -2103,6 +2160,7 @@ struct RouteElevationChartPanel: View {
                                             pinchAnchorDistance = nil
                                         }
                                 )
+                            }
                         }
                     }
                     .frame(height: panelStyle.chartHeight)
@@ -2149,6 +2207,8 @@ struct RouteElevationChartPanel: View {
                 .padding(.vertical, panelStyle.verticalPadding)
             }
         }
+        // Charts have fixed plotting space; the route summary below retains full Dynamic Type.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .task(id: sampleCacheKey) {
             refreshSampleCaches()
         }
@@ -2557,10 +2617,13 @@ private struct RouteElevationReadout: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
             Text(value)
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -2622,7 +2685,8 @@ private struct RouteFullScreenMapView: View {
                     activeElevationDistanceMeters = distanceMeters
                 }
             )
-            .ignoresSafeArea()
+            // Keep MapKit's bottom safe area so its attribution stays above the chart.
+            .ignoresSafeArea(.container, edges: RouteVaultMapboxConfiguration.isConfigured ? .all : .top)
 
             VStack(alignment: .leading, spacing: 10) {
                 VStack(alignment: .leading, spacing: 10) {
@@ -2631,11 +2695,12 @@ private struct RouteFullScreenMapView: View {
                             dismiss()
                         } label: {
                             Image(systemName: "xmark")
-                                .font(.headline.weight(.bold))
-                                .frame(width: 40, height: 40)
+                                .font(.system(size: 18, weight: .semibold))
+                                .frame(width: 44, height: 44)
                                 .background(.ultraThinMaterial, in: Circle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Close full screen map")
 
                         RouteMapSettingsButton()
 
@@ -2643,12 +2708,13 @@ private struct RouteFullScreenMapView: View {
                             fitTrigger += 1
                         } label: {
                             Image(systemName: "scope")
-                                .font(.headline.weight(.bold))
-                                .frame(width: 40, height: 40)
+                                .font(.system(size: 18, weight: .semibold))
+                                .frame(width: 44, height: 44)
                                 .background(.ultraThinMaterial, in: Circle())
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Recenter route")
+                        .accessibilityIdentifier("route-fullscreen-recenter")
 
                         Spacer(minLength: 0)
                     }
@@ -2656,6 +2722,7 @@ private struct RouteFullScreenMapView: View {
                     if isShowingElevationChart {
                         Text(route.name)
                             .font(.headline.weight(.bold))
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .foregroundStyle(.primary)
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
@@ -2681,17 +2748,17 @@ private struct RouteFullScreenMapView: View {
             .padding(.top, 28)
             .padding(.bottom, 24)
 
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack {
-                Spacer()
-
                 if !isShowingElevationChart {
                     HStack {
                         Spacer(minLength: 0)
 
                         Button(action: onToggleElevationChart) {
                             Image(systemName: "eye")
-                                .font(.headline.weight(.bold))
-                                .frame(width: 40, height: 40)
+                                .font(.system(size: 18, weight: .semibold))
+                                .frame(width: 44, height: 44)
                                 .background(.ultraThinMaterial, in: Circle())
                         }
                         .buttonStyle(.plain)
@@ -2711,7 +2778,7 @@ private struct RouteFullScreenMapView: View {
                         primaryActionTitle: canDownloadRouteDetails ? routeDetailsActionTitle : nil,
                         onPrimaryAction: canDownloadRouteDetails ? onDownloadRouteDetails : nil,
                         onToggleVisibility: onToggleElevationChart,
-                        sampleOverride: screenshotPreviewSamples
+                        sampleOverride: screenshotPreviewSamples.isEmpty ? nil : screenshotPreviewSamples
                     )
                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                     .background(
@@ -2730,7 +2797,7 @@ private struct RouteFullScreenMapView: View {
             .padding(.top, 16)
             .padding(.bottom, 24)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(TerigoTheme.background.ignoresSafeArea())
         .onChange(of: isShowingElevationChart) { _, isShowing in
             if !isShowing {
                 bottomOverlayHeight = 0
@@ -2764,7 +2831,72 @@ private struct RouteMapSurface: View {
     }
 }
 
-struct RouteMapPreview: UIViewRepresentable {
+struct RouteMapPreview: View {
+    @AppStorage(AppRouteMapStyle.storageKey) private var appRouteMapStyleRawValue = AppRouteMapStyle.defaultValue.rawValue
+    @AppStorage(AppRouteMapPerspective.storageKey) private var appRouteMapPerspectiveRawValue = AppRouteMapPerspective.defaultValue.rawValue
+    let route: RouteRecord
+    let displayMode: RouteMapDisplayMode
+    let routeFitInsets: RouteMapFitInsets
+    let activeElevationSample: RouteElevationSample?
+    let lockedElevationSample: RouteElevationSample?
+    let userInterfaceStyle: UIUserInterfaceStyle
+    let fitTrigger: Int
+    let onRouteDistanceSelection: ((Double) -> Void)?
+
+    init(
+        route: RouteRecord,
+        displayMode: RouteMapDisplayMode = .embedded,
+        routeFitInsets: RouteMapFitInsets = .embedded,
+        activeElevationSample: RouteElevationSample? = nil,
+        lockedElevationSample: RouteElevationSample? = nil,
+        userInterfaceStyle: UIUserInterfaceStyle,
+        fitTrigger: Int = 0,
+        onRouteDistanceSelection: ((Double) -> Void)? = nil
+    ) {
+        self.route = route
+        self.displayMode = displayMode
+        self.routeFitInsets = routeFitInsets
+        self.activeElevationSample = activeElevationSample
+        self.lockedElevationSample = lockedElevationSample
+        self.userInterfaceStyle = userInterfaceStyle
+        self.fitTrigger = fitTrigger
+        self.onRouteDistanceSelection = onRouteDistanceSelection
+    }
+
+    var body: some View {
+        if RouteVaultMapboxConfiguration.isConfigured {
+            RouteMapboxPreview(route: route, displayMode: displayMode, routeFitInsets: routeFitInsets,
+                               activeElevationSample: activeElevationSample, lockedElevationSample: lockedElevationSample,
+                               userInterfaceStyle: userInterfaceStyle, fitTrigger: fitTrigger,
+                               onRouteDistanceSelection: onRouteDistanceSelection)
+        } else {
+            TerigoNativeMap(
+                tracks: [route.routeCoordinates],
+                markers: [lockedElevationSample, activeElevationSample].compactMap { $0 }.map { sample in
+                    TerigoNativeMap.Marker(id: sample.id, title: RouteDisplayFormatter.altitude(sample.elevationMeters),
+                                           coordinate: sample.coordinate, isElevationSample: true)
+                }.reduce(into: [TerigoNativeMap.Marker]()) { markers, marker in
+                    if !markers.contains(where: { $0.id == marker.id }) { markers.append(marker) }
+                },
+                fitRequest: fitTrigger,
+                // The full-screen container reserves chart space with safeAreaInset.
+                // MapKit uses that area to position both its camera and attribution.
+                fitInsets: displayMode == .fullScreen
+                    ? RouteMapFitInsets(top: routeFitInsets.top, bottom: 18)
+                    : routeFitInsets,
+                onTapCoordinate: { coordinate in
+                    guard let onRouteDistanceSelection,
+                          let sample = route.elevationProfile.min(by: {
+                              $0.coordinate.routeDistance(to: coordinate) < $1.coordinate.routeDistance(to: coordinate)
+                          }) else { return }
+                    onRouteDistanceSelection(sample.distanceMeters)
+                }
+            )
+        }
+    }
+}
+
+private struct RouteMapboxPreview: UIViewRepresentable {
     @AppStorage(AppRouteMapStyle.storageKey) private var appRouteMapStyleRawValue = AppRouteMapStyle.defaultValue.rawValue
     @AppStorage(AppRouteMapPerspective.storageKey) private var appRouteMapPerspectiveRawValue = AppRouteMapPerspective.defaultValue.rawValue
     let route: RouteRecord
@@ -3356,52 +3488,64 @@ private struct RouteOfflineDownloadSheet: View {
                 )
             }
 
-            Section("Map Styles") {
-                ForEach(AppRouteMapStyle.allCases) { mapStyle in
-                    RouteOfflineToggleRow(
-                        title: mapStyle.title,
-                        subtitle: mapStyle == .dark ? "Standard tiles with dark styling" : nil,
-                        isOn: Binding(
-                            get: { selection.normalizedMapStyles.contains(mapStyle) },
-                            set: { isSelected in
-                                var updated = selection.normalizedMapStyles
-                                if isSelected {
-                                    updated.append(mapStyle)
-                                    selection.includesGPX = true
-                                } else {
-                                    updated.removeAll { $0 == mapStyle }
-                                    if updated.isEmpty {
-                                        selection.includesTerrain = false
+            if RouteVaultMapboxConfiguration.isConfigured {
+                Section {
+                    ForEach(AppRouteMapStyle.allCases) { mapStyle in
+                        RouteOfflineToggleRow(
+                            title: mapStyle.title,
+                            subtitle: mapStyle == .dark ? "Standard tiles with dark styling" : nil,
+                            isOn: Binding(
+                                get: { selection.normalizedMapStyles.contains(mapStyle) },
+                                set: { isSelected in
+                                    var updated = selection.normalizedMapStyles
+                                    if isSelected {
+                                        updated.append(mapStyle)
+                                        selection.includesGPX = true
+                                    } else {
+                                        updated.removeAll { $0 == mapStyle }
+                                        if updated.isEmpty {
+                                            selection.includesTerrain = false
+                                        }
                                     }
+                                    selection.mapStyles = updated
                                 }
-                                selection.mapStyles = updated
+                            ),
+                            sizeText: byteCountText(Self.estimatedMapBytes(for: route, mapStyle: mapStyle)),
+                            statusText: offlineStatus.mapStyles.contains(mapStyle) ? "Saved" : "Not Saved",
+                            isDisabled: !RouteVaultMapboxConfiguration.isConfigured
+                        )
+                    }
+                } header: {
+                    Text("Map Styles")
+                }
+
+                Section("Extras") {
+                    RouteOfflineToggleRow(
+                        title: "3D Terrain",
+                        subtitle: "Offline terrain shading for 3D mode",
+                        isOn: Binding(
+                            get: { selection.includesTerrain },
+                            set: { newValue in
+                                selection.includesTerrain = newValue && !selection.normalizedMapStyles.isEmpty
                             }
                         ),
-                        sizeText: byteCountText(Self.estimatedMapBytes(for: route, mapStyle: mapStyle)),
-                        statusText: offlineStatus.mapStyles.contains(mapStyle) ? "Saved" : "Not Saved"
+                        sizeText: byteCountText(Self.estimatedTerrainBytes(for: route)),
+                        statusText: offlineStatus.includesTerrain ? "Saved" : "Not Saved",
+                        isDisabled: selection.normalizedMapStyles.isEmpty
                     )
                 }
-            }
 
-            Section("Extras") {
-                RouteOfflineToggleRow(
-                    title: "3D Terrain",
-                    subtitle: "Offline terrain shading for 3D mode",
-                    isOn: Binding(
-                        get: { selection.includesTerrain },
-                        set: { newValue in
-                            selection.includesTerrain = newValue && !selection.normalizedMapStyles.isEmpty
-                        }
-                    ),
-                    sizeText: byteCountText(Self.estimatedTerrainBytes(for: route)),
-                    statusText: offlineStatus.includesTerrain ? "Saved" : "Not Saved",
-                    isDisabled: selection.normalizedMapStyles.isEmpty
-                )
+            } else {
+                Section("Offline navigation") {
+                    Text("Save the route and elevation profile as GPX. Apple Maps needs a connection to load new map areas.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section {
                 HStack {
-                    Text("Selected Download Size")
+                    Text("Estimated download")
                     Spacer()
                     Text(byteCountText(totalEstimatedBytes))
                         .foregroundStyle(.secondary)

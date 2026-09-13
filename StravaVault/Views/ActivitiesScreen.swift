@@ -17,6 +17,7 @@ struct ActivitiesScreen: View {
     @State private var model = ActivitiesModel()
     @State private var isShowingGPXImporter = false
     @State private var isShowingSettingsSheet = false
+    @State private var importAfterSettingsDismiss = false
     @State private var statusBannerDismissTask: Task<Void, Never>?
 
     private var measurementSystem: AppMeasurementSystem {
@@ -56,30 +57,45 @@ struct ActivitiesScreen: View {
                 VStack(alignment: .leading, spacing: 18) {
                     bannerStack
                     connectionSection
-                    activitiesTopActions
-
-                    if model.isConnected {
-                        activitiesTab
+                    activitiesTab
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 24)
+            }
+            .scrollDismissesKeyboard(.immediately)
+            .refreshable { await model.syncActivities(using: modelContext) }
+            .background(TerigoTheme.background.ignoresSafeArea())
+            .navigationTitle("Activities")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { isShowingSettingsSheet = true } label: {
+                        Label("Activities settings", systemImage: "ellipsis")
+                    }
+                    .accessibilityIdentifier("activities-settings-button")
+                }
+                if showsDismissButton {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Close") { dismiss() }
                     }
                 }
-                .padding(20)
+            }
+            .navigationDestination(for: String.self) { activityKey in
+                if let activity = activities.first(where: { $0.activityKey == activityKey }) {
+                    DeferredActivityDetailScreen(activity: activity, model: model)
+                } else {
+                    ContentUnavailableView("Activity Unavailable", systemImage: "exclamationmark.triangle",
+                                           description: Text("This activity is no longer saved on this device."))
+                }
             }
         }
         .accessibilityIdentifier("activities-screen")
-        .background(Color.black.ignoresSafeArea())
-        .navigationTitle("Activities")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
-            if showsDismissButton {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                }
+        .sheet(isPresented: $isShowingSettingsSheet, onDismiss: {
+            if importAfterSettingsDismiss {
+                importAfterSettingsDismiss = false
+                isShowingGPXImporter = true
             }
-
-        })
-        .sheet(isPresented: $isShowingSettingsSheet) {
+        }) {
             NavigationStack {
                 ActivitiesSettingsSheet(
                     activityListDensitySelection: activityListDensitySelection,
@@ -88,12 +104,15 @@ struct ActivitiesScreen: View {
                     isConnecting: model.isConnecting,
                     isImportingLocalActivities: model.isImportingLocalActivities,
                     onSyncActivities: { Task { await model.syncActivities(using: modelContext) } },
-                    onImportGPXActivity: { isShowingGPXImporter = true },
+                    onImportGPXActivity: {
+                        importAfterSettingsDismiss = true
+                        isShowingSettingsSheet = false
+                    },
                     onReconnectStrava: { Task { await model.connect() } },
                     onDisconnectStrava: { model.disconnect() }
                 )
             }
-            .presentationDetents([.medium])
+            .presentationDetents([.large])
         }
         .task {
             await Task.yield()
@@ -117,18 +136,6 @@ struct ActivitiesScreen: View {
         .onDisappear {
             statusBannerDismissTask?.cancel()
             statusBannerDismissTask = nil
-        }
-        .navigationDestination(for: String.self) { activityKey in
-            if let activity = activities.first(where: { $0.activityKey == activityKey }) {
-                DeferredActivityDetailScreen(activity: activity, model: model)
-            } else {
-                ContentUnavailableView(
-                    "Activity Unavailable",
-                    systemImage: "exclamationmark.triangle",
-                    description: Text("This activity is no longer available locally.")
-                )
-                .background(Color.black.ignoresSafeArea())
-            }
         }
     }
 
@@ -206,24 +213,6 @@ struct ActivitiesScreen: View {
         }
     }
 
-    private var activitiesTopActions: some View {
-        HStack {
-            Spacer()
-
-            Button {
-                isShowingSettingsSheet = true
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 20, weight: .semibold))
-                    .frame(width: 36, height: 36)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Activities settings")
-            .accessibilityIdentifier("activities-settings-button")
-        }
-    }
-
     private var activitiesTab: some View {
         VStack(alignment: .leading, spacing: 16) {
             ActivitiesControlsSection(
@@ -283,6 +272,7 @@ private struct ActivitiesSettingsSheet: View {
                     }
                 }
                 .pickerStyle(.inline)
+                .labelsHidden()
             }
 
             Section("Actions") {
@@ -322,7 +312,7 @@ private struct ActivitiesSettingsSheet: View {
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .background(Color.black.ignoresSafeArea())
+        .background(TerigoTheme.background.ignoresSafeArea())
         .navigationTitle("Activities Settings")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -372,7 +362,7 @@ private struct ActivityDetailLoadingScreen: View {
     var body: some View {
         VStack(spacing: 18) {
             ProgressView()
-                .tint(.white)
+                .tint(TerigoTheme.accent)
             Text("Loading \(title)…")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -380,7 +370,7 @@ private struct ActivityDetailLoadingScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(24)
-        .background(Color.black.ignoresSafeArea())
+        .background(TerigoTheme.background.ignoresSafeArea())
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -439,7 +429,7 @@ private struct ActivityConnectionCard: View {
         VStack(alignment: .leading, spacing: 14) {
             Text(title)
                 .font(.title3.weight(.bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             Text(message)
                 .font(.subheadline)
@@ -456,40 +446,45 @@ private struct ActivityConnectionCard: View {
             .buttonStyle(.plain)
         }
         .padding(18)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 }
 
 private struct ActivitySearchField: View {
     @Binding var text: String
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
+                .font(.system(size: 18))
                 .foregroundStyle(.secondary)
-
             TextField("Search activities, places, sports", text: $text)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
-                .foregroundStyle(.white)
-
+                .focused($isFocused)
+                .submitLabel(.search)
+                .onSubmit { isFocused = false }
+                .accessibilityIdentifier("activities-search")
             if !text.isEmpty {
-                Button {
-                    text = ""
-                } label: {
+                Button { text = ""; isFocused = false } label: {
                     Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 18))
                         .foregroundStyle(.secondary)
+                        .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Clear activity search")
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 
 private struct ActivitiesControlsSection: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Bindable var model: ActivitiesModel
     let allActivities: [ActivityRecord]
     let summary: ActivitiesModel.ActivityListSummarySnapshot
@@ -501,7 +496,8 @@ private struct ActivitiesControlsSection: View {
         VStack(alignment: .leading, spacing: 12) {
             ActivitySearchField(text: $model.query)
 
-            HStack(spacing: 12) {
+            let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 12)) : AnyLayout(HStackLayout(spacing: 12))
+            layout {
                 ActivitiesActionControlChip(
                     title: "Sort",
                     symbolName: model.sortCriteria.first?.option.symbolName ?? ActivitySortCriterion.defaultCriterion.option.symbolName,
@@ -636,7 +632,7 @@ private struct ActivitiesActionControlChip: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 11)
             .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-            .activitiesControlSurface(isActive: isActive, cornerRadius: 18)
+            .routeControlSurface(isActive: isActive, cornerRadius: 18)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(accessibilityIdentifier)
@@ -652,9 +648,9 @@ private struct ActivitiesSortSheet: View {
             VStack(alignment: .leading, spacing: 18) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Text("Sort Order")
+                        Text("Priority")
                             .font(.headline.weight(.semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
 
                         Spacer(minLength: 0)
 
@@ -708,17 +704,17 @@ private struct ActivitiesSortSheet: View {
                             .padding(.horizontal, 14)
                             .padding(.vertical, 12)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .activitiesControlSurface(isActive: false, cornerRadius: 18)
+                            .routeControlSurface(isActive: false, cornerRadius: 18)
                         }
                         .buttonStyle(.plain)
                     }
                 }
                 .padding(18)
-                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             }
             .padding(20)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(TerigoTheme.background.ignoresSafeArea())
         .navigationTitle("Sort Order")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("activities-sort-screen")
@@ -745,6 +741,7 @@ private struct ActivitiesSortSheet: View {
 }
 
 private struct ActivitiesSortCriterionRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let criterion: ActivitySortCriterion
     let availableOptions: [ActivitySortOption]
     let canMoveUp: Bool
@@ -758,7 +755,8 @@ private struct ActivitiesSortCriterionRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
+            let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 10)) : AnyLayout(HStackLayout(spacing: 10))
+            layout {
                 Menu {
                     ForEach(availableOptions) { option in
                         Button {
@@ -770,10 +768,10 @@ private struct ActivitiesSortCriterionRow: View {
                 } label: {
                     HStack(spacing: 10) {
                         AppIconGlyph(name: criterion.option.symbolName, size: 14, weight: .semibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         Text(criterion.option.title)
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         Spacer(minLength: 0)
                         Image(systemName: "chevron.down")
                             .font(.caption.weight(.semibold))
@@ -782,7 +780,7 @@ private struct ActivitiesSortCriterionRow: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .activitiesControlSurface(isActive: false, cornerRadius: 18)
+                    .routeControlSurface(isActive: false, cornerRadius: 18)
                 }
                 .buttonStyle(.plain)
 
@@ -793,23 +791,25 @@ private struct ActivitiesSortCriterionRow: View {
                         Text(criterion.direction.title)
                             .font(.subheadline.weight(.semibold))
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
-                    .activitiesControlSurface(isActive: false, cornerRadius: 18)
+                    .routeControlSurface(isActive: false, cornerRadius: 18)
                 }
                 .buttonStyle(.plain)
             }
 
-            HStack(spacing: 8) {
+            if canMoveUp || canMoveDown || canRemove {
+              HStack(spacing: 8) {
                 ActivitiesSortReorderButton(symbolName: "arrow.up", isEnabled: canMoveUp, action: onMoveUp)
                 ActivitiesSortReorderButton(symbolName: "arrow.down", isEnabled: canMoveDown, action: onMoveDown)
                 ActivitiesSortReorderButton(symbolName: "minus.circle", isEnabled: canRemove, action: onRemove)
                 Spacer(minLength: 0)
+              }
             }
         }
         .padding(14)
-        .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 }
 
@@ -822,12 +822,13 @@ private struct ActivitiesSortReorderButton: View {
         Button(action: action) {
             Image(systemName: symbolName)
                 .font(.caption.weight(.bold))
-                .foregroundStyle(isEnabled ? .white : .secondary.opacity(0.4))
-                .frame(width: 30, height: 30)
-                .background(Color.white.opacity(0.05), in: Circle())
+                .foregroundStyle(isEnabled ? Color.primary : Color.secondary.opacity(0.4))
+                .frame(width: 44, height: 44)
+                .background(Color.primary.opacity(0.05), in: Circle())
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
+        .accessibilityLabel(symbolName == "arrow.up" ? "Move criterion up" : symbolName == "arrow.down" ? "Move criterion down" : "Remove criterion")
     }
 }
 
@@ -842,11 +843,6 @@ private struct ActivitiesFiltersSheet: View {
     @State private var maximumDistanceInput = ""
     @State private var minimumClimbInput = ""
     @State private var maximumClimbInput = ""
-
-    private let rangeFieldColumns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
 
     private var measurementSystem: AppMeasurementSystem {
         AppMeasurementSystem(rawValue: measurementSystemRawValue) ?? .defaultValue
@@ -871,7 +867,7 @@ private struct ActivitiesFiltersSheet: View {
                     HStack {
                         Text("Activity")
                             .font(.headline.weight(.semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         Spacer(minLength: 0)
                         if model.hasActiveFilters {
                             Button("Reset") {
@@ -885,7 +881,7 @@ private struct ActivitiesFiltersSheet: View {
                     }
 
                     if !availableSports.isEmpty {
-                        LazyVGrid(columns: rangeFieldColumns, spacing: 10) {
+                        VStack(spacing: 8) {
                             ForEach(availableSports) { sport in
                                 ActivitiesSelectionPill(
                                     title: sport.title,
@@ -899,14 +895,14 @@ private struct ActivitiesFiltersSheet: View {
                     }
                 }
                 .padding(18)
-                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Source")
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
-                    LazyVGrid(columns: rangeFieldColumns, spacing: 10) {
+                    VStack(spacing: 8) {
                         ForEach(ActivitySourceKind.allCases, id: \.rawValue) { source in
                             ActivitiesSelectionPill(
                                 title: source.title,
@@ -919,14 +915,14 @@ private struct ActivitiesFiltersSheet: View {
                     }
                 }
                 .padding(18)
-                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Privacy")
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
-                    HStack(spacing: 10) {
+                    VStack(spacing: 8) {
                         ForEach(ActivityPrivacyFilter.allCases) { filter in
                             ActivitiesSelectionPill(
                                 title: filter.title,
@@ -939,12 +935,12 @@ private struct ActivitiesFiltersSheet: View {
                     }
                 }
                 .padding(18)
-                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Ranges")
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     ActivitiesRangeEditor(
                         title: "Distance",
@@ -963,11 +959,11 @@ private struct ActivitiesFiltersSheet: View {
                     )
                 }
                 .padding(18)
-                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             }
             .padding(20)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(TerigoTheme.background.ignoresSafeArea())
         .navigationTitle("Filters")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("activities-filters-screen")
@@ -1099,7 +1095,7 @@ private struct ActivitiesSelectionPill: View {
 
                 Text(title)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Spacer(minLength: 0)
@@ -1111,7 +1107,7 @@ private struct ActivitiesSelectionPill: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .activitiesControlSurface(isActive: isSelected, cornerRadius: 18)
+            .routeControlSurface(isActive: isSelected, cornerRadius: 18)
         }
         .buttonStyle(.plain)
     }
@@ -1155,44 +1151,14 @@ private struct ActivitiesRangeField: View {
                 .keyboardType(.decimalPad)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 11)
-                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
     }
 }
 
-private extension View {
-    @ViewBuilder
-    func activitiesControlSurface(isActive: Bool, cornerRadius: CGFloat) -> some View {
-        if #available(iOS 26.0, *) {
-            self
-                .glassEffect(
-                    isActive
-                        ? .regular.tint(Color(red: 0.95, green: 0.63, blue: 0.48)).interactive()
-                        : .regular.interactive(),
-                    in: .rect(cornerRadius: cornerRadius)
-                )
-                .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        } else {
-            self
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(isActive ? Color(red: 0.95, green: 0.63, blue: 0.48).opacity(0.18) : .clear)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .strokeBorder(
-                            isActive ? Color(red: 0.95, green: 0.63, blue: 0.48).opacity(0.35) : Color.primary.opacity(0.08),
-                            lineWidth: 1
-                        )
-                )
-                .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        }
-    }
-}
 
 private extension ActivitySourceKind {
     var title: String {
@@ -1212,30 +1178,8 @@ private struct ActivitiesSummaryStrip: View {
         Text("\(RouteDisplayFormatter.compactCount(summary.activityCount)) activities · \(RouteDisplayFormatter.distance(summary.distanceMeters)) total")
             .font(.footnote.weight(.medium))
             .foregroundStyle(.secondary)
-            .lineLimit(1)
+            .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-private struct ActivityMiniMetric: View {
-    let title: String
-    let value: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title.uppercased())
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.secondary)
-
-            Text(value)
-                .font(.headline.weight(.bold))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 
@@ -1324,20 +1268,22 @@ private struct CompactActivityListRow: View {
 
 private struct ActivityCardRow: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let activity: ActivityRecord
     let density: AppActivityListDensity
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
+            let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10)) : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+            layout {
                 AppIconGlyph(name: activity.sportSymbolName, size: 16)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .frame(width: 28, height: 28)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(activity.name)
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .multilineTextAlignment(.leading)
 
                     Text(activity.displayLocation.nilIfEmpty ?? activity.startCoordinate?.formattedLabel ?? "Location unavailable")
@@ -1351,15 +1297,16 @@ private struct ActivityCardRow: View {
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(RouteDisplayFormatter.calendarDate(activity.startDate))
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     Text(activity.sourceKind == .strava ? "Strava" : "Local")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(activity.sourceKind == .strava ? Color.orange : Color(red: 0.61, green: 0.82, blue: 1.0))
+                        .foregroundStyle(activity.sourceKind == .strava ? Color.orange : Color.secondary)
                 }
             }
 
-            HStack(spacing: 10) {
+            let metricLayout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8)) : AnyLayout(HStackLayout(spacing: 10))
+            metricLayout {
                 ActivityMetricChip(iconName: "ruler", value: RouteDisplayFormatter.distance(activity.distanceMeters))
                 ActivityMetricChip(iconName: "mountain.2", value: RouteDisplayFormatter.climb(activity.elevationGainMeters))
                 ActivityMetricChip(iconName: "clock", value: RouteDisplayFormatter.duration(max(activity.movingTime, activity.elapsedTime)))
@@ -1384,7 +1331,7 @@ private struct ActivityCardRow: View {
 
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: density.cardCornerRadius, style: .continuous)
-            .fill(Color.white.opacity(0.04))
+            .fill(TerigoTheme.surface)
     }
 
     private var cardOutline: some View {
@@ -1395,20 +1342,22 @@ private struct ActivityCardRow: View {
 
 private struct ExpandedActivityCardRow: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let activity: ActivityRecord
     let density: AppActivityListDensity
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 12) {
+            let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10)) : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+            layout {
                 AppIconGlyph(name: activity.sportSymbolName, size: 18)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .frame(width: 30, height: 30)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(activity.name)
                         .font(.system(.title3, design: .rounded, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .multilineTextAlignment(.leading)
 
                     Text(activity.displayLocation.nilIfEmpty ?? activity.startCoordinate?.formattedLabel ?? "Location unavailable")
@@ -1422,15 +1371,16 @@ private struct ExpandedActivityCardRow: View {
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(RouteDisplayFormatter.calendarDate(activity.startDate))
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     Text(activity.sourceKind == .strava ? "Strava" : "Local")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(activity.sourceKind == .strava ? Color.orange : Color(red: 0.61, green: 0.82, blue: 1.0))
+                        .foregroundStyle(activity.sourceKind == .strava ? Color.orange : Color.secondary)
                 }
             }
 
-            HStack(spacing: 10) {
+            let metricLayout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8)) : AnyLayout(HStackLayout(spacing: 10))
+            metricLayout {
                 ActivityMetricChip(iconName: "ruler", value: RouteDisplayFormatter.distance(activity.distanceMeters))
                 ActivityMetricChip(iconName: "mountain.2", value: RouteDisplayFormatter.climb(activity.elevationGainMeters))
                 ActivityMetricChip(iconName: "clock", value: RouteDisplayFormatter.duration(max(activity.movingTime, activity.elapsedTime)))
@@ -1462,7 +1412,7 @@ private struct ExpandedActivityCardRow: View {
 
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: density.cardCornerRadius, style: .continuous)
-            .fill(Color.white.opacity(0.04))
+            .fill(TerigoTheme.surface)
     }
 
     private var cardOutline: some View {
@@ -1498,10 +1448,10 @@ private struct ActivityMetricChip: View {
                 .lineLimit(1)
         }
         .font(.caption.weight(.semibold))
-        .foregroundStyle(.white)
+        .foregroundStyle(.primary)
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(Color.white.opacity(0.07), in: Capsule())
+        .background(Color.primary.opacity(0.07), in: Capsule())
     }
 }
 
@@ -1562,14 +1512,14 @@ private struct ActivityDetailScreen: View {
                     detailCard(title: "Description") {
                         Text(description)
                             .font(.subheadline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
             }
             .padding(20)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(TerigoTheme.background.ignoresSafeArea())
         .navigationTitle(activity.name)
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("activity-detail-screen-\(activity.activityKey)")
@@ -2036,12 +1986,12 @@ private struct ActivityDetailScreen: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             content()
         }
         .padding(16)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(TerigoTheme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private func detailRow(_ title: String, _ value: String) -> some View {
@@ -2054,7 +2004,7 @@ private struct ActivityDetailScreen: View {
 
             Text(value)
                 .font(.subheadline)
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .multilineTextAlignment(.trailing)
         }
     }
@@ -2079,13 +2029,13 @@ private struct ActivityDetailScreen: View {
 
             Text(title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 13)
-        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
@@ -2115,7 +2065,7 @@ private struct ActivityDetailMetricGrid: View {
 
                     Text(item.value)
                         .font(.subheadline.weight(.bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
 
@@ -2127,7 +2077,7 @@ private struct ActivityDetailMetricGrid: View {
                 .frame(maxWidth: .infinity, minHeight: 68, alignment: .topLeading)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
         }
     }
@@ -2136,10 +2086,10 @@ private struct ActivityDetailMetricGrid: View {
 private struct ActivityRouteMapPlaceholderCard: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 28, style: .continuous)
-            .fill(Color.white.opacity(0.04))
+            .fill(TerigoTheme.surface)
             .overlay {
                 ProgressView()
-                    .tint(.white.opacity(0.8))
+                    .tint(TerigoTheme.accent)
             }
     }
 }
@@ -2153,10 +2103,11 @@ private struct ActivityRouteMapCard: View {
         ZStack(alignment: .topTrailing) {
             Group {
                 if isMapVisible {
-                    ActivityRouteMapViewRepresentable(
-                        activity: activity,
-                        userInterfaceStyle: userInterfaceStyle
-                    )
+                    if RouteVaultMapboxConfiguration.isConfigured {
+                        ActivityRouteMapViewRepresentable(activity: activity, userInterfaceStyle: userInterfaceStyle)
+                    } else {
+                        TerigoNativeMap(tracks: [activity.mapDisplayCoordinates(maximumPointCount: 360)])
+                    }
                 } else {
                     ActivityRouteMapPlaceholder(activity: activity)
                 }
@@ -2188,14 +2139,7 @@ private struct ActivityRouteMapPlaceholder: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.11, green: 0.13, blue: 0.17),
-                    Color(red: 0.06, green: 0.07, blue: 0.10)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            TerigoTheme.surface
 
             VStack(spacing: 14) {
                 Image(systemName: activity.sportSymbolName)
@@ -2204,65 +2148,13 @@ private struct ActivityRouteMapPlaceholder: View {
 
                 Text("Loading route map")
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
 
                 Text(RouteDisplayFormatter.distance(activity.distanceMeters))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             .padding(24)
-        }
-    }
-}
-
-private struct ActivityExplorerMapCard: View {
-    let period: ActivityCoveragePeriodSnapshot
-    let selectedActivity: ActivityRecord?
-    let userInterfaceStyle: UIUserInterfaceStyle
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            ActivityExplorerMapViewRepresentable(
-                period: period,
-                selectedActivity: selectedActivity,
-                userInterfaceStyle: userInterfaceStyle
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-
-            VStack(alignment: .trailing, spacing: 12) {
-                RouteMapSettingsButton()
-
-                Spacer(minLength: 0)
-
-                ActivityExplorerLegend()
-            }
-            .padding(14)
-        }
-    }
-}
-
-private struct ActivityExplorerLegend: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            legendRow(color: Color(red: 1.0, green: 0.58, blue: 0.18), title: "Visited")
-            legendRow(color: Color(red: 0.22, green: 0.82, blue: 1.0), title: "Cluster")
-            legendRow(color: Color(red: 1.0, green: 0.84, blue: 0.28), title: "Square")
-            legendRow(color: Color.white, title: "Selected")
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 9)
-        .background(.black.opacity(0.68), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
-
-    private func legendRow(color: Color, title: String) -> some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-
-            Text(title)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.white)
         }
     }
 }
@@ -2513,256 +2405,6 @@ private struct ActivityRouteMapViewRepresentable: UIViewRepresentable {
                 )
                 mapView.camera.ease(to: camera, duration: 0.25)
             } catch { }
-        }
-    }
-}
-
-private struct ActivityExplorerMapViewRepresentable: UIViewRepresentable {
-    @AppStorage(AppRouteMapStyle.storageKey) private var appRouteMapStyleRawValue = AppRouteMapStyle.defaultValue.rawValue
-    @AppStorage(AppRouteMapPerspective.storageKey) private var appRouteMapPerspectiveRawValue = AppRouteMapPerspective.defaultValue.rawValue
-
-    let period: ActivityCoveragePeriodSnapshot
-    let selectedActivity: ActivityRecord?
-    let userInterfaceStyle: UIUserInterfaceStyle
-
-    private var appRouteMapStyle: AppRouteMapStyle {
-        AppRouteMapStyle.resolved(from: appRouteMapStyleRawValue)
-    }
-
-    private var appRouteMapPerspective: AppRouteMapPerspective {
-        AppRouteMapPerspective(rawValue: appRouteMapPerspectiveRawValue) ?? .twoDimensional
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
-
-    func makeUIView(context: Context) -> MapView {
-        RouteVaultMapboxConfiguration.configure()
-
-        let mapView = MapView(
-            frame: .zero,
-            mapInitOptions: MapInitOptions(
-                mapStyle: appRouteMapStyle.resolvedStyle(colorScheme: userInterfaceStyle),
-                cameraOptions: CameraOptions(
-                    center: selectedActivity?.startCoordinate ?? period.explorerTiles.first?.polygon.first,
-                    zoom: 7,
-                    pitch: appRouteMapPerspective.isThreeDimensional ? appRouteMapPerspective.pitch : 0
-                )
-            )
-        )
-        context.coordinator.bind(to: mapView)
-        configure(mapView)
-        return mapView
-    }
-
-    func updateUIView(_ mapView: MapView, context: Context) {
-        configure(mapView)
-        context.coordinator.update(
-            mapView: mapView,
-            period: period,
-            selectedActivity: selectedActivity,
-            routeMapStyle: appRouteMapStyle,
-            routeMapPerspective: appRouteMapPerspective,
-            userInterfaceStyle: userInterfaceStyle
-        )
-    }
-
-    private func configure(_ mapView: MapView) {
-        mapView.location.options.puckType = .puck2D()
-        mapView.gestures.options.pitchEnabled = appRouteMapPerspective.isThreeDimensional
-        mapView.gestures.options.rotateEnabled = true
-
-        var ornaments = mapView.ornaments.options
-        ornaments.compass.visibility = .hidden
-        ornaments.scaleBar.visibility = .hidden
-        mapView.ornaments.options = ornaments
-    }
-
-    final class Coordinator {
-        private weak var mapView: MapView?
-        private var cancelables = Set<AnyCancelable>()
-        private var tileManager: PolygonAnnotationManager?
-        private var selectedOutlineManager: PolylineAnnotationManager?
-        private var selectedLineManager: PolylineAnnotationManager?
-        private var lastSignature: Int?
-        private var lastStyleKey: String?
-        private var lastPerspective: AppRouteMapPerspective?
-        private var currentUsesStandardDarkReadabilityTuning = false
-
-        func bind(to mapView: MapView) {
-            guard self.mapView !== mapView else {
-                return
-            }
-
-            cancelables.removeAll()
-            self.mapView = mapView
-
-            mapView.mapboxMap.onStyleLoaded.observeNext { [weak self, weak mapView] _ in
-                guard let self, let mapView else {
-                    return
-                }
-
-                RouteMapStyleReadabilityTuning.apply(
-                    to: mapView.mapboxMap,
-                    usesStandardDarkStyle: self.currentUsesStandardDarkReadabilityTuning
-                )
-                RouteMapTerrainTuning.apply(
-                    to: mapView.mapboxMap,
-                    perspective: self.lastPerspective ?? .defaultValue
-                )
-                self.recreateManagers(on: mapView)
-                self.lastSignature = nil
-            }
-            .store(in: &cancelables)
-        }
-
-        func update(
-            mapView: MapView,
-            period: ActivityCoveragePeriodSnapshot,
-            selectedActivity: ActivityRecord?,
-            routeMapStyle: AppRouteMapStyle,
-            routeMapPerspective: AppRouteMapPerspective,
-            userInterfaceStyle: UIUserInterfaceStyle
-        ) {
-            let styleKey = "\(routeMapStyle.rawValue)-\(userInterfaceStyle.rawValue)"
-            currentUsesStandardDarkReadabilityTuning = routeMapStyle.usesStandardDarkReadabilityTuning(
-                colorScheme: userInterfaceStyle
-            )
-            lastPerspective = routeMapPerspective
-            RouteMapTerrainTuning.apply(
-                to: mapView.mapboxMap,
-                perspective: routeMapPerspective
-            )
-            if styleKey != lastStyleKey {
-                lastStyleKey = styleKey
-                mapView.mapboxMap.mapStyle = routeMapStyle.resolvedStyle(colorScheme: userInterfaceStyle)
-                recreateManagers(on: mapView)
-            }
-
-            var hasher = Hasher()
-            hasher.combine(period.id)
-            hasher.combine(period.visitedTileCount)
-            hasher.combine(period.bestSquare.sideLength)
-            hasher.combine(period.bestCluster.tileCount)
-            hasher.combine(tileHash(for: period.explorerTiles))
-            hasher.combine(selectedActivity?.activityKey)
-            hasher.combine(selectedActivity?.activityGeometryPolyline)
-            hasher.combine(routeMapPerspective.rawValue)
-            let signature = hasher.finalize()
-            guard signature != lastSignature else {
-                return
-            }
-
-            ensureManagers(on: mapView)
-            render(period: period, selectedActivity: selectedActivity)
-            lastSignature = signature
-            fit(period: period, selectedActivity: selectedActivity, on: mapView, perspective: routeMapPerspective)
-        }
-
-        private func recreateManagers(on mapView: MapView) {
-            mapView.annotations.removeAnnotationManager(withId: "activity-explorer-tiles")
-            mapView.annotations.removeAnnotationManager(withId: "activity-selected-outline")
-            mapView.annotations.removeAnnotationManager(withId: "activity-selected-line")
-            tileManager = mapView.annotations.makePolygonAnnotationManager(id: "activity-explorer-tiles")
-            selectedOutlineManager = mapView.annotations.makePolylineAnnotationManager(id: "activity-selected-outline")
-            selectedLineManager = mapView.annotations.makePolylineAnnotationManager(id: "activity-selected-line")
-        }
-
-        private func ensureManagers(on mapView: MapView) {
-            if tileManager == nil || selectedOutlineManager == nil || selectedLineManager == nil {
-                recreateManagers(on: mapView)
-            }
-        }
-
-        private func render(period: ActivityCoveragePeriodSnapshot, selectedActivity: ActivityRecord?) {
-            let squareTiles = Set(period.bestSquare.tiles)
-            let clusterTiles = Set(period.bestCluster.tiles)
-            tileManager?.annotations = period.explorerTiles.map { tile in
-                var polygon = PolygonAnnotation(
-                    id: tile.id,
-                    polygon: Polygon(outerRing: Ring(coordinates: tile.polygon))
-                )
-                let isSquare = squareTiles.contains(tile.coordinate)
-                let isCluster = clusterTiles.contains(tile.coordinate)
-                let visitAlpha = min(0.22 + (Double(min(tile.visitCount, 5)) * 0.06), 0.48)
-
-                polygon.fillColor = StyleColor(
-                    isSquare
-                        ? UIColor(red: 1.0, green: 0.84, blue: 0.28, alpha: 1.0)
-                        : (isCluster
-                            ? UIColor(red: 0.22, green: 0.82, blue: 1.0, alpha: 1.0)
-                            : UIColor(red: 1.0, green: 0.58, blue: 0.18, alpha: 1.0))
-                )
-                polygon.fillOpacity = isSquare ? 0.52 : (isCluster ? 0.40 : visitAlpha)
-                polygon.fillOutlineColor = StyleColor(
-                    isSquare
-                        ? UIColor(red: 1.0, green: 0.95, blue: 0.72, alpha: 0.98)
-                        : UIColor.white.withAlphaComponent(isCluster ? 0.34 : 0.12)
-                )
-                return polygon
-            }
-
-            guard let selectedActivity, selectedActivity.coordinates.count > 1 else {
-                selectedOutlineManager?.annotations = []
-                selectedLineManager?.annotations = []
-                return
-            }
-
-            var outline = PolylineAnnotation(lineCoordinates: selectedActivity.coordinates)
-            outline.lineColor = StyleColor(RouteMapLineStyle.outlineColor)
-            outline.lineWidth = RouteMapLineStyle.outlineWidth
-
-            var line = PolylineAnnotation(lineCoordinates: selectedActivity.coordinates)
-            line.lineColor = StyleColor(RouteMapLineStyle.fillColor)
-            line.lineWidth = RouteMapLineStyle.fillWidth
-
-            selectedOutlineManager?.annotations = [outline]
-            selectedOutlineManager?.lineDasharray = nil
-            selectedLineManager?.annotations = [line]
-            selectedLineManager?.lineDasharray = activitySurfaceKind(for: selectedActivity.sportKind) == .paved ? nil : RouteMapLineStyle.unpavedDashPattern
-        }
-
-        private func fit(
-            period: ActivityCoveragePeriodSnapshot,
-            selectedActivity: ActivityRecord?,
-            on mapView: MapView,
-            perspective: AppRouteMapPerspective
-        ) {
-            let coordinates: [CLLocationCoordinate2D]
-            if let selectedActivity, selectedActivity.coordinates.count > 1 {
-                coordinates = selectedActivity.coordinates
-            } else {
-                coordinates = period.explorerTiles.flatMap(\.polygon)
-            }
-
-            guard coordinates.count > 1 else {
-                return
-            }
-
-            do {
-                let camera = try mapView.mapboxMap.camera(
-                    for: coordinates,
-                    camera: CameraOptions(
-                        bearing: 0,
-                        pitch: perspective.isThreeDimensional ? perspective.pitch : 0
-                    ),
-                    coordinatesPadding: UIEdgeInsets(top: 34, left: 28, bottom: 34, right: 28),
-                    maxZoom: selectedActivity == nil ? 12.6 : 15.8,
-                    offset: nil
-                )
-                mapView.camera.ease(to: camera, duration: 0.25)
-            } catch { }
-        }
-
-        private func tileHash(for tiles: [ActivityExplorerTile]) -> Int {
-            var hasher = Hasher()
-            hasher.combine(tiles.count)
-            for tile in tiles.prefix(4_000) {
-                hasher.combine(tile.coordinate)
-                hasher.combine(tile.visitCount)
-            }
-            return hasher.finalize()
         }
     }
 }

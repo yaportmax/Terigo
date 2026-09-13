@@ -1,73 +1,43 @@
 import Foundation
 
 struct StravaAPIService {
-    private actor RequestCoordinator {
-        struct CachedValue<Value> {
+    /// Registers work before the first suspension, so simultaneous callers share one request.
+    actor RequestCache<Key: Hashable & Sendable, Value: Sendable> {
+        private struct Entry {
             let value: Value
             let expiresAt: Date
         }
+        private var values: [Key: Entry] = [:]
+        private var tasks: [Key: Task<Value, Error>] = [:]
 
-        private var refreshedSessions: [String: CachedValue<StravaSession>] = [:]
-        private var refreshTasks: [String: Task<StravaSession, Error>] = [:]
-        private var routeGPXCache: [Int: CachedValue<Data>] = [:]
-        private var routeGPXTasks: [Int: Task<Data, Error>] = [:]
-
-        func cachedSession(for refreshToken: String) -> StravaSession? {
-            guard let entry = refreshedSessions[refreshToken], entry.expiresAt > Date() else {
-                refreshedSessions[refreshToken] = nil
-                return nil
+        func value(for key: Key, lifetime: TimeInterval, forceRefresh: Bool = false,
+                   operation: @escaping @Sendable () async throws -> Value) async throws -> Value {
+            values = values.filter { $0.value.expiresAt > Date() }
+            if !forceRefresh, let cached = values[key] { return cached.value }
+            if let task = tasks[key] { return try await task.value }
+            let task = Task { try await operation() }
+            tasks[key] = task
+            do {
+                let value = try await task.value
+                if values.count >= 64, let oldest = values.min(by: { $0.value.expiresAt < $1.value.expiresAt })?.key {
+                    values[oldest] = nil
+                }
+                values[key] = Entry(value: value, expiresAt: Date().addingTimeInterval(lifetime))
+                tasks[key] = nil
+                return value
+            } catch {
+                tasks[key] = nil
+                throw error
             }
-            return entry.value
-        }
-
-        func storeSession(_ session: StravaSession, for refreshToken: String) {
-            refreshedSessions[refreshToken] = CachedValue(
-                value: session,
-                expiresAt: Date().addingTimeInterval(30)
-            )
-        }
-
-        func refreshTask(for refreshToken: String) -> Task<StravaSession, Error>? {
-            refreshTasks[refreshToken]
-        }
-
-        func setRefreshTask(_ task: Task<StravaSession, Error>, for refreshToken: String) {
-            refreshTasks[refreshToken] = task
-        }
-
-        func clearRefreshTask(for refreshToken: String) {
-            refreshTasks[refreshToken] = nil
-        }
-
-        func cachedRouteGPX(for routeID: Int) -> Data? {
-            guard let entry = routeGPXCache[routeID], entry.expiresAt > Date() else {
-                routeGPXCache[routeID] = nil
-                return nil
-            }
-            return entry.value
-        }
-
-        func storeRouteGPX(_ data: Data, for routeID: Int) {
-            routeGPXCache[routeID] = CachedValue(
-                value: data,
-                expiresAt: Date().addingTimeInterval(10 * 60)
-            )
-        }
-
-        func routeGPXTask(for routeID: Int) -> Task<Data, Error>? {
-            routeGPXTasks[routeID]
-        }
-
-        func setRouteGPXTask(_ task: Task<Data, Error>, for routeID: Int) {
-            routeGPXTasks[routeID] = task
-        }
-
-        func clearRouteGPXTask(for routeID: Int) {
-            routeGPXTasks[routeID] = nil
         }
     }
 
-    private static let requestCoordinator = RequestCoordinator()
+    private struct GPXRequestKey: Hashable, Sendable {
+        let routeID: Int
+        let accessToken: String
+    }
+    private static let sessionRequests = RequestCache<String, StravaSession>()
+    private static let gpxRequests = RequestCache<GPXRequestKey, Data>()
 
     private static let requestedScopes = [
         "read",
@@ -88,13 +58,14 @@ struct StravaAPIService {
         case rateLimited(String, retryAfter: Date?)
         case server(String)
         case unauthorized
+        case missingPermission(String)
         case badResponse(String?)
         case missingRouteData
         case transport(URLError, URL?)
 
         var requiresSessionReset: Bool {
             switch self {
-            case .unauthorized, .missingAuthBroker, .missingCredentials:
+            case .unauthorized:
                 return true
             case let .server(message):
                 return Self.messageSuggestsSessionReset(message)
@@ -116,15 +87,17 @@ struct StravaAPIService {
             case .invalidState:
                 return "The Strava callback could not be verified."
             case .missingCredentials:
-                return "A Strava client ID is required."
+                return "Strava isn’t configured in this build. Your saved routes and GPX files are still available."
             case .invalidClientID:
-                return "The Strava client ID must be numeric."
+                return "Strava sign-in has a configuration problem. Please contact Terigo support."
             case .missingAuthBroker:
-                return "This build is missing a usable Strava client secret or auth broker URL."
+                return "Strava sign-in isn’t available in this build. Your saved routes and GPX files are still available."
             case let .rateLimited(message, _):
                 return message
             case let .server(message):
                 return message
+            case let .missingPermission(scope):
+                return "Strava hasn’t granted \(scope) permission. Reconnect Strava and allow the requested access to use this feature."
             case .unauthorized:
                 return "Your Strava session is no longer authorized. Reconnect and try again."
             case let .badResponse(message):
@@ -226,7 +199,12 @@ struct StravaAPIService {
             throw APIError.invalidRedirect
         }
 
-        let items = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+        var items: [String: String] = [:]
+        for item in components.queryItems ?? [] {
+            guard items.updateValue(item.value ?? "", forKey: item.name) == nil else {
+                throw APIError.invalidRedirect
+            }
+        }
 
         if items["error"] == "access_denied" {
             throw APIError.cancelled
@@ -296,15 +274,7 @@ struct StravaAPIService {
             return session
         }
 
-        if !forceRefresh, let cachedSession = await Self.requestCoordinator.cachedSession(for: session.refreshToken) {
-            return cachedSession
-        }
-
-        if let inFlightTask = await Self.requestCoordinator.refreshTask(for: session.refreshToken) {
-            return try await inFlightTask.value
-        }
-
-        let refreshTask = Task<StravaSession, Error> {
+        return try await Self.sessionRequests.value(for: session.refreshToken, lifetime: 30, forceRefresh: forceRefresh) {
             let tokenResponse: StravaTokenResponse
 
             if let authBrokerBaseURL = credentials.authBrokerBaseURL {
@@ -341,18 +311,6 @@ struct StravaAPIService {
                 expiresAt: Date(timeIntervalSince1970: TimeInterval(tokenResponse.expiresAt)),
                 acceptedScopes: session.acceptedScopes
             )
-        }
-
-        await Self.requestCoordinator.setRefreshTask(refreshTask, for: session.refreshToken)
-
-        do {
-            let refreshedSession = try await refreshTask.value
-            await Self.requestCoordinator.storeSession(refreshedSession, for: session.refreshToken)
-            await Self.requestCoordinator.clearRefreshTask(for: session.refreshToken)
-            return refreshedSession
-        } catch {
-            await Self.requestCoordinator.clearRefreshTask(for: session.refreshToken)
-            throw error
         }
     }
 
@@ -408,30 +366,14 @@ struct StravaAPIService {
     }
 
     func fetchRouteGPX(routeID: Int, accessToken: String) async throws -> Data {
-        if let cachedData = await Self.requestCoordinator.cachedRouteGPX(for: routeID) {
-            return cachedData
-        }
-
-        if let inFlightTask = await Self.requestCoordinator.routeGPXTask(for: routeID) {
-            return try await inFlightTask.value
-        }
-
         let url = apiBaseURL.appendingPathComponent("routes/\(routeID)/export_gpx")
-        let fetchTask = Task<Data, Error> {
+        // A file cached for one authorization must not serve a different account.
+        let key = GPXRequestKey(routeID: routeID, accessToken: accessToken)
+        return try await Self.gpxRequests.value(for: key, lifetime: 10 * 60) {
             try await sendDataGETRequest(to: url, accessToken: accessToken)
         }
-        await Self.requestCoordinator.setRouteGPXTask(fetchTask, for: routeID)
-
-        do {
-            let data = try await fetchTask.value
-            await Self.requestCoordinator.storeRouteGPX(data, for: routeID)
-            await Self.requestCoordinator.clearRouteGPXTask(for: routeID)
-            return data
-        } catch {
-            await Self.requestCoordinator.clearRouteGPXTask(for: routeID)
-            throw error
-        }
     }
+
 
     func fetchAllActivities(accessToken: String) async throws -> [StravaActivitySummaryPayload] {
         var page = 1
@@ -625,25 +567,8 @@ struct StravaAPIService {
             throw APIError.badResponse(nil)
         }
 
-        if !(200 ... 299).contains(httpResponse.statusCode) {
-            let fault = try? decoder.decode(StravaFault.self, from: data)
-
-            if isAuthorizationFailure(statusCode: httpResponse.statusCode, fault: fault, requestURL: request.url) {
-                throw APIError.unauthorized
-            }
-
-            switch httpResponse.statusCode {
-            case 401:
-                throw APIError.unauthorized
-            case 429:
-                let retryAfter = rateLimitResetDate(from: httpResponse)
-                throw APIError.rateLimited(
-                    rateLimitMessage(fallback: fault?.displayMessage, retryAfter: retryAfter),
-                    retryAfter: retryAfter
-                )
-            default:
-                throw APIError.server(fault?.displayMessage ?? "Strava returned HTTP \(httpResponse.statusCode).")
-            }
+        if let error = responseError(for: httpResponse, data: data, requestURL: request.url) {
+            throw error
         }
 
         do {
@@ -669,25 +594,8 @@ struct StravaAPIService {
             throw APIError.badResponse(nil)
         }
 
-        if !(200 ... 299).contains(httpResponse.statusCode) {
-            let fault = try? decoder.decode(StravaFault.self, from: data)
-
-            if isAuthorizationFailure(statusCode: httpResponse.statusCode, fault: fault, requestURL: request.url) {
-                throw APIError.unauthorized
-            }
-
-            switch httpResponse.statusCode {
-            case 401:
-                throw APIError.unauthorized
-            case 429:
-                let retryAfter = rateLimitResetDate(from: httpResponse)
-                throw APIError.rateLimited(
-                    rateLimitMessage(fallback: fault?.displayMessage, retryAfter: retryAfter),
-                    retryAfter: retryAfter
-                )
-            default:
-                throw APIError.server(fault?.displayMessage ?? "Strava returned HTTP \(httpResponse.statusCode).")
-            }
+        if let error = responseError(for: httpResponse, data: data, requestURL: request.url) {
+            throw error
         }
 
         guard !data.isEmpty else {
@@ -695,6 +603,27 @@ struct StravaAPIService {
         }
 
         return data
+    }
+
+    func responseError(for response: HTTPURLResponse, data: Data, requestURL: URL?) -> APIError? {
+        guard !(200 ... 299).contains(response.statusCode) else { return nil }
+        let fault = try? decoder.decode(StravaFault.self, from: data)
+        // Strava also returns 401 for a valid token without the required scope.
+        // Preserve that session so features with granted access keep working.
+        if [401, 403].contains(response.statusCode),
+           let permission = fault?.errors?.first(where: {
+               $0.code == "missing" && $0.field?.hasSuffix("_permission") == true
+           })?.field {
+            return .missingPermission(String(permission.dropLast("_permission".count)))
+        }
+        if isAuthorizationFailure(statusCode: response.statusCode, fault: fault, requestURL: requestURL) {
+            return .unauthorized
+        }
+        if response.statusCode == 429 {
+            let retryAfter = rateLimitResetDate(from: response)
+            return .rateLimited(rateLimitMessage(fallback: fault?.displayMessage, retryAfter: retryAfter), retryAfter: retryAfter)
+        }
+        return .server(fault?.displayMessage ?? "Strava returned HTTP \(response.statusCode).")
     }
 
     private func isAuthorizationFailure(statusCode: Int, fault: StravaFault?, requestURL: URL?) -> Bool {

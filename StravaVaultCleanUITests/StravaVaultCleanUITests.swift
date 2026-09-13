@@ -1,604 +1,364 @@
 import XCTest
 
+/// Exercise the redesigned app through public controls, with synthetic data only.
 @MainActor
 final class StravaVaultCleanUITests: XCTestCase {
-    override func setUpWithError() throws {
-        continueAfterFailure = false
-    }
+    override func setUpWithError() throws { continueAfterFailure = false }
 
-    func testRouteLibraryCoreFlows() throws {
-        let app = launchSeededApp()
+    func testVisualTourLight() throws { try visualTour(appearance: "light") }
+    func testVisualTourDark() throws { try visualTour(appearance: "dark") }
+    func testActivityTourLight() throws { try activityTour(appearance: "light") }
+    func testActivityTourDark() throws { try activityTour(appearance: "dark") }
 
-        waitForLibraryReady(in: app)
-
-        app.buttons["route-library-sort-button"].waitAndTap()
-        XCTAssertTrue(firstExistingElement([
-            app.scrollViews["route-sort-screen"],
-            app.otherElements["route-sort-screen"],
-            app.buttons["Close"]
-        ]).exists)
-        app.buttons["Close"].waitAndTap()
-
-        app.buttons["route-library-filters-button"].waitAndTap()
-        XCTAssertTrue(firstExistingElement([
-            app.scrollViews["route-filters-screen"],
-            app.otherElements["route-filters-screen"],
-            app.buttons["Close"]
-        ]).exists)
-        app.buttons["Close"].waitAndTap()
-
-        tapElement(firstExistingElement([
-            app.buttons["route-row-4001"],
-            app.staticTexts["Morning Marin Headlands 🌉"]
-        ]))
-
-        XCTAssertTrue(firstExistingElement([
-            app.buttons["Done"],
-            app.staticTexts["Morning Marin Headlands 🌉"]
-        ]).exists)
-        app.buttons["Done"].waitAndTap()
-        waitForLibraryReady(in: app)
-    }
-
-    func testMapBrowseOpensAndCloses() throws {
-        let app = launchSeededApp()
-
-        app.buttons["route-library-open-map"].waitAndTap()
-        XCTAssertTrue(firstExistingElement([
-            app.otherElements["map-browse-screen"],
-            app.scrollViews["map-browse-screen"],
-            app.staticTexts["Map"]
-        ], timeout: 8).exists)
-        navigateBackToRouteLibrary(in: app)
-        waitForLibraryReady(in: app)
-    }
-
-    func testManageListsFlow() throws {
-        let app = launchSeededApp()
-
-        waitForLibraryReady(in: app)
-        app.buttons["route-library-open-lists"].waitAndTap()
-
-        XCTAssertTrue(firstExistingElement([
-            app.buttons["route-list-row-weekend-hits"],
-            app.buttons["route-list-row-training-block"],
-            app.buttons["Add"]
-        ]).exists)
-
-        tapElement(firstExistingElement([
-            app.buttons["route-list-row-weekend-hits"],
-            app.staticTexts["Weekend Hits"]
-        ]))
-
-        XCTAssertTrue(firstExistingElement([
-            app.otherElements["route-list-detail-screen-weekend-hits"],
-            app.staticTexts["Weekend Hits"]
-        ]).exists)
-
-        tapElement(firstExistingElement([
-            app.buttons["route-row-4001"],
-            app.staticTexts["Morning Marin Headlands 🌉"]
-        ]))
-
-        XCTAssertTrue(firstExistingElement([
-            app.otherElements["route-editor-screen-4001"],
-            app.staticTexts["Morning Marin Headlands 🌉"],
-            app.buttons["Done"]
-        ], timeout: 8).exists)
-    }
-
-    func testDeletedRoutesScreenOpens() throws {
-        let app = launchSeededApp()
-
-        openSettingsMenu(in: app)
-        tapMenuItem(
-            in: app,
-            identifiers: ["route-library-open-deleted-routes"],
-            labels: ["Deleted Routes"]
-        )
-
-        XCTAssertTrue(firstExistingElement([
-            app.staticTexts["Deleted Routes"],
-            app.buttons["Close"]
-        ]).exists)
-    }
-
-    func testOfflineCenterAndExportScreensOpen() throws {
-        let app = launchSeededApp()
-
-        openSettingsMenu(in: app)
-        tapMenuItem(
-            in: app,
-            identifiers: ["route-library-open-offline-center"],
-            labels: ["Offline"]
-        )
-        XCTAssertTrue(firstExistingElement([
-            app.staticTexts["Offline Center"],
-            app.buttons["Close"]
-        ]).exists)
-        app.buttons["Close"].waitAndTap()
-
-        openSettingsMenu(in: app)
-        tapMenuItem(
-            in: app,
-            identifiers: ["route-library-open-export-data"],
-            labels: ["Export Data"]
-        )
-        XCTAssertTrue(firstExistingElement([
-            app.staticTexts["Export Data"],
-            app.buttons["Export"]
-        ]).exists)
-    }
-
-    func testRouteEditorOfflineDownloadAndRemoveFlow() throws {
-        let app = launchSeededApp()
-
-        openRouteEditor(in: app, routeID: 4001, routeName: "Morning Marin Headlands 🌉")
-
-        revealRouteEditorAction(in: app, routeID: 4001, identifier: "route-editor-open-offline-download")
-        app.buttons["route-editor-open-offline-download"].waitAndTap(timeout: 8)
-        XCTAssertTrue(firstExistingElement([
-            app.otherElements["route-offline-download-screen-4001"],
-            app.navigationBars["Offline Download"],
-            app.buttons["route-offline-download-confirm"]
-        ], timeout: 8).exists)
-
-        app.buttons["route-offline-download-confirm"].waitAndTap(timeout: 8)
-        waitForRouteEditorOfflineDownloadCompletion(in: app, routeID: 4001)
-
-        app.buttons["route-editor-remove-offline-download"].waitAndTap(timeout: 8)
-        revealRouteEditorAction(in: app, routeID: 4001, identifier: "route-editor-open-offline-download")
-        XCTAssertFalse(app.buttons["route-editor-remove-offline-download"].exists)
-        XCTAssertFalse(app.buttons["route-editor-share-saved-gpx"].exists)
-    }
-
-    func testRouteLibrarySwipeOfflineDownloadFlow() throws {
-        let app = launchSeededApp()
-
-        waitForLibraryReady(in: app)
-        revealRouteLibrarySwipeDownload(in: app, routeID: 4001)
-        tapElement(firstExistingElement([
-            app.buttons["route-library-swipe-download-4001"],
-            matchingButton(in: app, label: "Download")
-        ], timeout: 8))
-
-        openOfflineCenter(in: app)
-        XCTAssertTrue(matchingStaticText(in: app, label: "Routes With Offline Files, 1").waitForExistence(timeout: 40))
-        XCTAssertTrue(app.buttons["offline-center-download-missing"].isEnabled)
-        XCTAssertTrue(app.buttons["offline-center-remove-saved"].isEnabled)
-    }
-
-    func testOfflineCenterBatchDownloadAndRemoveFlow() throws {
-        let app = launchSeededApp()
-
-        openOfflineCenter(in: app)
-        app.buttons["offline-center-download-missing"].waitAndTap(timeout: 8)
-
-        XCTAssertTrue(matchingStaticText(in: app, label: "Routes With Offline Files, 3").waitForExistence(timeout: 60))
-        XCTAssertFalse(app.buttons["offline-center-download-missing"].isEnabled)
-        XCTAssertTrue(app.buttons["offline-center-remove-saved"].isEnabled)
-
-        app.buttons["offline-center-remove-saved"].waitAndTap(timeout: 8)
-        XCTAssertTrue(matchingStaticText(in: app, label: "Routes With Offline Files, 0").waitForExistence(timeout: 15))
-        XCTAssertTrue(app.buttons["offline-center-download-missing"].exists)
-        XCTAssertTrue(app.buttons["offline-center-download-missing"].isEnabled)
-    }
-
-    func testListFullOfflineDownloadFlow() throws {
-        let app = launchSeededApp()
-
-        downloadGPXOnlyRoute(in: app, routeID: 4001, routeName: "Morning Marin Headlands 🌉")
-        downloadGPXOnlyRoute(in: app, routeID: 4002, routeName: "Presidio Tempo Loop")
-
-        waitForLibraryReady(in: app)
-        app.buttons["route-library-open-lists"].waitAndTap()
-        firstExistingElement([
-            app.buttons["route-list-row-weekend-hits"],
-            app.staticTexts["Weekend Hits"]
-        ], timeout: 8).tap()
-
-        XCTAssertTrue(firstExistingElement([
-            app.otherElements["route-list-detail-screen-weekend-hits"],
-            app.staticTexts["Weekend Hits"]
-        ], timeout: 8).exists)
-
-        tapElement(firstExistingElement([
-            app.buttons["route-list-settings-button"],
-            matchingButton(in: app, label: "List settings"),
-            app.otherElements["route-list-settings-button"],
-            matchingOtherElement(in: app, label: "List settings"),
-            app.navigationBars.buttons.element(boundBy: 1),
-            app.navigationBars.buttons.element(boundBy: 0)
-        ], timeout: 8))
-        tapElement(firstExistingElement([
-            app.buttons["route-list-download-full-offline"],
-            matchingButton(in: app, label: "Refresh Full List Offline Files"),
-            matchingButton(in: app, label: "Download Full List Offline Files")
-        ], timeout: 8))
-
-        XCTAssertTrue(
-            matchingStaticText(in: app, label: "Saved offline files for 2 routes in this list.").waitForExistence(timeout: 25)
-        )
-    }
-
-    func testRouteTrackingStartAndEndFlow() throws {
-        let app = launchSeededApp()
-
-        openRouteEditor(in: app, routeID: 4001, routeName: "Morning Marin Headlands 🌉")
-        revealRouteEditorAction(in: app, routeID: 4001, identifier: "route-editor-start-activity")
-        app.buttons["route-editor-start-activity"].waitAndTap(timeout: 8)
-
-        XCTAssertTrue(firstExistingElement([
-            app.otherElements["route-tracking-screen-4001"],
-            app.buttons["route-tracking-close"]
-        ], timeout: 12).exists)
-
-        tapTrackingBatterySaver(in: app)
-        dismissTrackingContinuousGPSPromptIfPresent(in: app)
-
-        tapTrackingClose(in: app)
-        if app.buttons["route-tracking-confirm-end"].waitForExistence(timeout: 5) {
-            app.buttons["route-tracking-confirm-end"].tap()
-        }
-
-        XCTAssertTrue(firstExistingElement([
-            app.otherElements["route-editor-screen-4001"],
-            app.buttons["route-library-sort-button"]
-        ], timeout: 12).exists)
-    }
-
-    func testActivitiesListAndActivityDetailFlow() throws {
-        let app = launchSeededApp()
-
-        openActivitiesScreen(in: app)
-
-        XCTAssertTrue(firstExistingElement([
-            app.buttons["activities-settings-button"],
-            app.buttons["activity-row-ui-activity-headlands-tempo"],
-            app.staticTexts["Sunrise Headlands Tempo 🌁"],
-            app.navigationBars["Activities"]
-        ], timeout: 8).exists)
-
-        tapElement(firstExistingElement([
-            app.buttons["activity-row-ui-activity-headlands-tempo"],
-            app.staticTexts["Sunrise Headlands Tempo 🌁"]
-        ]))
-
-        XCTAssertTrue(firstExistingElement([
-            app.otherElements["activity-detail-screen-ui-activity-headlands-tempo"],
-            app.staticTexts["Sunrise Headlands Tempo 🌁"],
-            app.navigationBars["Sunrise Headlands Tempo 🌁"]
-        ], timeout: 8).exists)
-    }
-
-    func testActivitiesSortAndFiltersFlow() throws {
-        let app = launchSeededApp()
-
-        openActivitiesScreen(in: app)
-
-        XCTAssertTrue(firstExistingElement([
-            app.buttons["activities-sort-button"],
-            app.buttons["activities-filters-button"]
-        ], timeout: 8).exists)
-
-        app.buttons["activities-sort-button"].waitAndTap()
-        XCTAssertTrue(firstExistingElement([
-            app.scrollViews["activities-sort-screen"],
-            app.otherElements["activities-sort-screen"],
-            app.buttons["Reset"]
-        ], timeout: 8).exists)
-        app.buttons["Close"].waitAndTap()
-
-        app.buttons["activities-filters-button"].waitAndTap()
-        XCTAssertTrue(firstExistingElement([
-            app.scrollViews["activities-filters-screen"],
-            app.otherElements["activities-filters-screen"],
-            app.staticTexts["Source"]
-        ], timeout: 8).exists)
-
-        tapElement(firstExistingElement([
-            app.buttons["Run"],
-            app.staticTexts["Run"]
-        ]))
-
-        XCTAssertTrue(firstExistingElement([
-            app.staticTexts["Distance"],
-            app.staticTexts["Privacy"]
-        ], timeout: 8).exists)
-        app.buttons["Close"].waitAndTap()
-    }
-
-    func testActivitiesSettingsMenuShowsCoreActions() throws {
-        let app = launchSeededApp()
-        openActivitiesScreen(in: app)
-        app.buttons["activities-settings-button"].waitAndTap(timeout: 8)
-
-        XCTAssertTrue(firstExistingElement([
-            app.staticTexts["Activity View"],
-            app.buttons["Import GPX Activity"]
-        ], timeout: 8).exists)
-        XCTAssertTrue(firstExistingElement([
-            app.buttons["Sync Activities"],
-            app.buttons["Disconnect"],
-            app.buttons["Reconnect Strava"]
-        ], timeout: 8).exists)
-    }
-
-    private func launchSeededApp() -> XCUIApplication {
+    func testLibraryOpenFailureCanRetry() throws {
+        XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
-        app.launchArguments += [
-            "--ui-testing",
-            "--ui-testing-seed-demo",
-            "--ui-testing-disable-animations"
-        ]
+        app.launchArguments = ["--ui-testing", "--ui-testing-seed-demo", "--ui-test-storage-failure"]
         app.launch()
+        XCTAssertTrue(app.buttons["library-retry-open"].waitForExistence(timeout: 10))
+        capture("library-storage-recovery", app)
+        tap(app.buttons["library-retry-open"])
+        XCTAssertTrue(app.buttons["route-row-4001"].waitForExistence(timeout: 15))
+    }
+
+    func testSearchAndNavigationPreserveLibrary() throws {
+        let app = launch()
+        let search = app.textFields["route-library-search"]
+        tap(search)
+        search.typeText("Presidio")
+        XCTAssertTrue(app.buttons["route-row-4002"].waitForExistence(timeout: 8))
+        XCTAssertTrue(waitUntil { !app.buttons["route-row-4001"].exists })
+        capture("search-filtered", app)
+        search.typeText("\n")
+        tapTab("Activities", app)
+        tapTab("Routes", app)
+        XCTAssertEqual(search.value as? String, "Presidio")
+        XCTAssertTrue(app.buttons["route-row-4002"].exists)
+        tap(app.buttons["Clear search"])
+        app.swipeDown()
+        XCTAssertTrue(app.buttons["route-row-4001"].waitForExistence(timeout: 8))
+        tap(search)
+        search.typeText("NoSuchRouteAnywhere")
+        XCTAssertTrue(app.staticTexts["No matching routes"].waitForExistence(timeout: 8))
+        capture("search-empty", app)
+    }
+
+    func testCreateListAndCancelDeletion() throws {
+        let app = launch()
+        tapTab("Lists", app)
+        tap(app.buttons["lists-create"])
+        let input = app.alerts.textFields.firstMatch
+        tap(input)
+        input.typeText("Autumn Adventures")
+        tap(app.alerts.buttons["Create"])
+        XCTAssertTrue(app.buttons["route-list-row-autumn-adventures"].waitForExistence(timeout: 8))
+        capture("list-created", app)
+        app.buttons["route-list-row-autumn-adventures"].swipeLeft()
+        tap(app.buttons["Delete"])
+        capture("list-delete-confirmation", app)
+        tap(app.buttons["Cancel"])
+        tap(app.buttons["route-list-row-autumn-adventures"])
+        XCTAssertTrue(app.staticTexts["Autumn Adventures"].waitForExistence(timeout: 8))
+        capture("list-empty-detail", app)
+        tapTab("Routes", app)
+        tap(app.buttons["route-actions-4003"])
+        capture("route-actions-menu", app)
+        tap(app.buttons["Add to List"])
+        tap(app.buttons["Autumn Adventures"])
+        tapTab("Lists", app)
+        XCTAssertTrue(app.buttons["route-row-4003"].waitForExistence(timeout: 8))
+        capture("list-route-added-from-menu", app)
+    }
+
+    func testTrackingAndMapTools() throws {
+        let app = launch()
+        addUIInterruptionMonitor(withDescription: "Location permission") { alert in
+            let allow = alert.buttons["Allow While Using App"]
+            if allow.exists { allow.tap(); return true }
+            return false
+        }
+        openRoute(app)
+        tap(app.buttons["route-editor-start-activity"])
+        app.tap()
+        XCTAssertTrue(app.buttons["route-tracking-close"].waitForExistence(timeout: 12))
+        capture("tracking-live", app)
+        tap(app.buttons["route-tracking-battery-saver"])
+        capture("tracking-continuous-gps", app)
+        if app.buttons["route-tracking-continuous-gps-not-now"].exists {
+            tapAlertButton("route-tracking-continuous-gps-not-now", app)
+        }
+        tap(app.buttons["route-tracking-close"])
+        if app.buttons["route-tracking-confirm-end"].waitForExistence(timeout: 3) {
+            capture("tracking-end-confirmation", app)
+            tapAlertButton("route-tracking-confirm-end", app)
+            capture("tracking-finished", app)
+            tap(app.buttons["route-tracking-close"])
+        }
+        XCTAssertTrue(app.buttons["route-row-4001"].waitForExistence(timeout: 12))
+    }
+
+    func testExploreMapTools() throws {
+        let app = launch()
+        tapTab("Explore", app)
+        tap(app.buttons["Fit routes on map"])
+        tap(app.buttons["Open map full screen"])
+        // Give network-backed map tiles time to render for the visual record.
+        RunLoop.current.run(until: Date().addingTimeInterval(3))
+        capture("explore-fullscreen", app)
+        tap(app.buttons["Close full screen map"])
+        tap(app.buttons["Search for a place"])
+        capture("explore-place-search", app)
+    }
+
+    func testRouteMapSharingAndListDeletion() throws {
+        let app = launch()
+        openRoute(app)
+        tap(app.buttons["Open full screen map"])
+        tap(app.buttons["route-fullscreen-recenter"])
+        RunLoop.current.run(until: Date().addingTimeInterval(3))
+        capture("route-fullscreen-map", app)
+        // Inspect the presented map's system accessibility elements by label.
+        // Compare their displayed bounds to catch the original chart overlap directly.
+        let attribution = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", "Legal")).allElementsBoundByIndex.last
+        let chartHeading = app.staticTexts.matching(identifier: "Elevation Profile").allElementsBoundByIndex.last
+        let attributionIsVisible: Bool
+        if let attribution, let chartHeading {
+            attributionIsVisible = attribution.frame.height > 0
+                && app.frame.contains(attribution.frame)
+                && attribution.frame.maxY < chartHeading.frame.minY
+        } else {
+            attributionIsVisible = false
+        }
+        if !attributionIsVisible { capture("failure-map-attribution-layout", app) }
+        XCTAssertTrue(attributionIsVisible, "Map attribution must remain visible above the elevation panel")
+        tap(app.buttons["Close full screen map"])
+        tap(app.buttons["Done"])
+        tapTab("Lists", app)
+        tap(app.buttons["route-list-row-training-block"])
+        tap(app.buttons["route-list-settings-button"])
+        tap(app.buttons["Sharing & Collaboration"])
+        capture("list-sharing", app)
+        app.swipeUp()
+        capture("list-collaboration", app)
+        tap(app.buttons["Close"])
+        tap(app.buttons["route-list-settings-button"])
+        tap(app.buttons["route-list-delete"])
+        tap(app.alerts.buttons["Delete List"])
+        XCTAssertTrue(app.buttons["route-list-row-weekend-hits"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["route-list-row-training-block"].exists)
+        tapTab("Routes", app)
+        XCTAssertTrue(app.buttons["route-row-4002"].waitForExistence(timeout: 8))
+        openRoute(app)
+        capture("route-preserved-after-list-deletion", app)
+    }
+
+    func testOfflineGPXDownload() throws {
+        let app = launch()
+        openRoute(app)
+        tap(app.buttons["route-editor-open-offline-download"])
+        capture("offline-options", app)
+        tap(app.buttons["route-offline-download-confirm"])
+        XCTAssertTrue(waitUntil(timeout: 35) { !app.buttons["route-offline-download-confirm"].exists })
+        tap(app.buttons["Done"])
+        openSettings(app)
+        tap(app.buttons["route-library-open-offline-center"])
+        XCTAssertTrue(app.buttons["offline-center-remove-saved"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["offline-center-remove-saved"].isEnabled)
+        capture("offline-saved", app)
+    }
+
+    func testRouteDeletedFromListCanBeRestoredForSync() throws {
+        let app = launch()
+        tapTab("Lists", app)
+        tap(app.buttons["route-list-row-weekend-hits"])
+        openRoute(app)
+        let delete = app.buttons["Delete Route"]
+        scrollTo(delete, app)
+        tap(delete)
+        capture("route-delete-confirmation", app)
+        tap(app.alerts.buttons["Delete Route"])
+        XCTAssertTrue(waitUntil { !app.buttons["route-editor-start-activity"].exists })
+        tapTab("Routes", app)
+        XCTAssertFalse(app.buttons["route-row-4001"].exists)
+        openSettings(app)
+        tap(app.buttons["route-library-open-deleted-routes"])
+        XCTAssertTrue(app.buttons["Undelete"].waitForExistence(timeout: 8))
+        capture("deleted-route-recovery", app)
+        tap(app.buttons["Undelete"])
+        XCTAssertTrue(app.staticTexts["No Deleted Routes"].waitForExistence(timeout: 8))
+    }
+
+    func testWelcomeAndLocalLibrary() throws {
+        let app = launch(seed: false)
+        XCTAssertTrue(app.buttons["welcome-continue-local"].waitForExistence(timeout: 8))
+        capture("welcome", app)
+        tap(app.buttons["Connect with Strava"])
+        XCTAssertTrue(app.staticTexts["Strava sign-in isn’t available in this build. Your saved routes and GPX files are still available."].waitForExistence(timeout: 8))
+        capture("welcome-connection-unavailable", app)
+        tap(app.buttons["welcome-continue-local"])
+        XCTAssertTrue(app.buttons["route-library-import-gpx"].waitForExistence(timeout: 8))
+        capture("local-empty-library", app)
+        tapTab("Activities", app)
+        tap(app.buttons["activities-settings-button"])
+        XCTAssertTrue(app.buttons["Import GPX Activity"].waitForExistence(timeout: 8))
+        capture("local-activity-import", app)
+    }
+
+    func testLargeTextAndLandscape() throws {
+        let app = launch(extra: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        capture("accessibility-library", app)
+        openRoute(app)
+        XCTAssertTrue(app.buttons["route-editor-start-activity"].isHittable)
+        capture("accessibility-detail", app)
+        tap(app.buttons["Done"])
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(waitUntil { app.frame.width > app.frame.height })
+        capture("landscape-library", app)
+        tapTab("Explore", app)
+        capture("landscape-explore", app)
+        XCUIDevice.shared.orientation = .portrait
+        tapTab("Activities", app)
+        capture("accessibility-activities", app)
+    }
+
+    private func visualTour(appearance: String) throws {
+        let app = launch(appearance: appearance)
+        capture("\(appearance)-01-routes", app)
+        tap(app.buttons["route-library-sort-button"])
+        capture("\(appearance)-02-sort", app)
+        tap(app.buttons["Close"])
+        tap(app.buttons["route-library-filters-button"])
+        capture("\(appearance)-03-filters", app)
+        app.swipeUp()
+        capture("\(appearance)-04-filter-areas-lists", app)
+        tap(app.buttons["Close"])
+        openRoute(app)
+        capture("\(appearance)-05-route-overview", app)
+        scrollTo(app.staticTexts["route-weather-location"], app)
+        capture("\(appearance)-06-route-weather", app)
+        scrollTo(app.staticTexts["route-list-membership"], app)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.30)))
+        capture("\(appearance)-07-route-organization", app)
+        scrollTo(app.buttons["Open Start in Maps"], app)
+        capture("\(appearance)-08-route-tools", app)
+        tap(app.buttons["Done"])
+        tapTab("Explore", app)
+        XCTAssertTrue(app.buttons["map-browse-filters-button"].waitForExistence(timeout: 8))
+        capture("\(appearance)-09-explore", app)
+        tapTab("Lists", app)
+        capture("\(appearance)-10-lists", app)
+        tap(app.buttons["route-list-row-weekend-hits"])
+        capture("\(appearance)-11-list-detail", app)
+    }
+
+    private func activityTour(appearance: String) throws {
+        let app = launch(appearance: appearance)
+        tapTab("Activities", app)
+        capture("\(appearance)-12-activities", app)
+        tap(app.buttons["activities-sort-button"])
+        capture("\(appearance)-13-activity-sort", app)
+        tap(app.buttons["Close"])
+        tap(app.buttons["activities-filters-button"])
+        capture("\(appearance)-14-activity-filters", app)
+        tap(app.buttons["Close"])
+        tap(app.buttons["activity-row-ui-activity-headlands-tempo"])
+        XCTAssertTrue(app.otherElements["activity-detail-screen-ui-activity-headlands-tempo"].waitForExistence(timeout: 8)
+                      || app.scrollViews["activity-detail-screen-ui-activity-headlands-tempo"].exists)
+        capture("\(appearance)-15-activity-detail", app)
+        scrollTo(app.staticTexts["Heart Rate & Effort"], app)
+        capture("\(appearance)-16-activity-analysis", app)
+        scrollTo(app.staticTexts["Terrain & Pacing"], app)
+        capture("\(appearance)-17-activity-terrain", app)
+        tapTab("Routes", app)
+        openSettings(app)
+        capture("\(appearance)-18-settings", app)
+        tap(app.buttons["route-library-open-offline-center"])
+        capture("\(appearance)-19-offline", app)
+        tap(app.buttons["Close"])
+        openSettings(app)
+        tap(app.buttons["route-library-open-export-data"])
+        capture("\(appearance)-20-export", app)
+        tap(app.buttons["Done"])
+        openSettings(app)
+        tap(app.buttons["Manage Account"])
+        capture("\(appearance)-21-account", app)
+        tap(app.buttons["Done"])
+        openSettings(app)
+        tap(app.buttons["route-library-send-feedback"])
+        capture("\(appearance)-22-feedback", app)
+    }
+
+    private func launch(appearance: String = "light", seed: Bool = true, extra: [String] = []) -> XCUIApplication {
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-disable-animations", "--ui-appearance=\(appearance)"] + extra
+        if seed { app.launchArguments.append("--ui-testing-seed-demo") }
+        app.launch()
+        if seed { XCTAssertTrue(app.buttons["route-library-import-gpx"].waitForExistence(timeout: 15)) }
         return app
     }
-
-    private func openActivitiesScreen(in app: XCUIApplication) {
-        openSettingsMenu(in: app)
-        tapMenuItem(
-            in: app,
-            identifiers: ["route-library-open-activities"],
-            labels: ["Activities"]
-        )
-
-        XCTAssertTrue(firstExistingElement([
-            app.buttons["activities-settings-button"],
-            app.buttons["activities-sort-button"],
-            app.buttons["activities-filters-button"],
-            app.buttons["activity-row-ui-activity-headlands-tempo"],
-            app.navigationBars["Activities"]
-        ], timeout: 8).exists)
-    }
-
-    private func openRouteEditor(in app: XCUIApplication, routeID: Int, routeName: String) {
-        waitForLibraryReady(in: app)
-        tapElement(firstExistingElement([
-            app.buttons["route-row-\(routeID)"],
-            app.staticTexts[routeName]
-        ], timeout: 8))
-
-        XCTAssertTrue(firstExistingElement([
-            app.otherElements["route-editor-screen-\(routeID)"],
-            app.buttons["route-editor-start-activity"],
-            app.buttons["route-editor-open-offline-download"],
-            app.buttons["Done"],
-            app.navigationBars[routeName]
-        ], timeout: 8).exists)
-    }
-
-    private func openOfflineCenter(in app: XCUIApplication) {
-        openSettingsMenu(in: app)
-        tapMenuItem(
-            in: app,
-            identifiers: ["route-library-open-offline-center"],
-            labels: ["Offline"]
-        )
-        XCTAssertTrue(firstExistingElement([
-            app.otherElements["offline-center-screen"],
-            app.staticTexts["Offline Center"],
-            app.buttons["Close"]
-        ], timeout: 8).exists)
-    }
-
-    private func downloadGPXOnlyRoute(in app: XCUIApplication, routeID: Int, routeName: String) {
-        openRouteEditor(in: app, routeID: routeID, routeName: routeName)
-
-        if !app.buttons["route-editor-share-saved-gpx"].exists {
-            revealRouteEditorAction(in: app, routeID: routeID, identifier: "route-editor-open-offline-download")
-            app.buttons["route-editor-open-offline-download"].waitAndTap(timeout: 8)
-            XCTAssertTrue(firstExistingElement([
-                app.otherElements["route-offline-download-screen-\(routeID)"],
-                app.navigationBars["Offline Download"],
-                app.buttons["route-offline-download-confirm"]
-            ], timeout: 8).exists)
-            app.buttons["route-offline-download-confirm"].waitAndTap(timeout: 8)
-            waitForRouteEditorOfflineDownloadCompletion(in: app, routeID: routeID)
+    private func openRoute(_ app: XCUIApplication) {
+        let route = app.buttons["route-row-4001"]
+        for _ in 0..<10 {
+            if route.exists && route.isHittable { break }
+            app.swipeUp()
         }
-
-        app.buttons["Done"].waitAndTap(timeout: 8)
-        waitForLibraryReady(in: app)
+        tap(route)
+        let opened = app.buttons["route-editor-start-activity"].waitForExistence(timeout: 10)
+        if !opened { capture("failure-opening-route", app) }
+        XCTAssertTrue(opened)
     }
-
-    private func waitForRouteEditorOfflineDownloadCompletion(in app: XCUIApplication, routeID: Int) {
-        XCTAssertTrue(
-            waitForRouteEditorAction(in: app, identifier: "route-editor-remove-offline-download", timeout: 60),
-            "Timed out waiting for the saved offline controls to appear for route \(routeID)."
-        )
-        XCTAssertTrue(
-            waitForRouteEditorAction(in: app, identifier: "route-editor-share-saved-gpx", timeout: 10),
-            "Timed out waiting for the saved GPX share action to appear for route \(routeID)."
-        )
+    private func openSettings(_ app: XCUIApplication) { tap(app.buttons["route-library-settings-button"]) }
+    private func tapTab(_ title: String, _ app: XCUIApplication) { tap(app.tabBars.buttons[title]) }
+    private func tap(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        let exists = element.waitForExistence(timeout: 10)
+        if !exists { capture("failure-missing-control", XCUIApplication()) }
+        XCTAssertTrue(exists, file: file, line: line)
+        let hittable = waitUntil(timeout: 10) { element.isHittable }
+        if !hittable { capture("failure-covered-control", XCUIApplication()) }
+        XCTAssertTrue(hittable, "Control is covered or off screen: \(element)", file: file, line: line)
+        element.tap()
     }
-
-    private func revealRouteEditorAction(in app: XCUIApplication, routeID: Int, identifier: String) {
-        let button = app.buttons[identifier]
-
-        for _ in 0..<5 where !button.exists {
-            swipeUpInsideBottomSheet(in: app)
+    private func tapAlertButton(_ identifier: String, _ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        // iOS 26 can expose a SwiftUI alert action as nested buttons with the same identifier.
+        let candidates = app.alerts.buttons.matching(identifier: identifier)
+        let ready = waitUntil(timeout: 10) {
+            candidates.allElementsBoundByIndex.contains { $0.isHittable }
         }
-        XCTAssertTrue(button.waitForExistence(timeout: 5))
+        if !ready { capture("failure-alert-control", app) }
+        XCTAssertTrue(ready, "Alert action is not reachable: \(identifier)", file: file, line: line)
+        candidates.allElementsBoundByIndex.first { $0.isHittable }?.tap()
     }
-
-    private func waitForRouteEditorAction(
-        in app: XCUIApplication,
-        identifier: String,
-        timeout: TimeInterval
-    ) -> Bool {
-        let button = app.buttons[identifier]
+    private func scrollTo(_ element: XCUIElement, _ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        for _ in 0..<12 {
+            if element.exists && element.isHittable { return }
+            // Start inside the page, above the persistent footer.
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65))
+                .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.30)))
+        }
+        capture("failure-scrolling-to-section", app)
+        XCTAssertTrue(element.isHittable, "Section was not reachable: \(element)", file: file, line: line)
+    }
+    private func capture(_ name: String, _ app: XCUIApplication) {
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        if name.hasPrefix("failure") {
+            let hierarchy = XCTAttachment(string: app.debugDescription)
+            hierarchy.name = "\(name)-hierarchy"
+            hierarchy.lifetime = .keepAlways
+            add(hierarchy)
+        }
+    }
+    private func waitUntil(timeout: TimeInterval = 8, _ condition: () -> Bool) -> Bool {
         let deadline = Date().addingTimeInterval(timeout)
-
         repeat {
-            if button.exists {
-                return true
-            }
-
-            swipeUpInsideBottomSheet(in: app)
-            RunLoop.current.run(until: Date().addingTimeInterval(0.35))
-        } while Date() < deadline
-
-        return button.exists
-    }
-
-    private func revealRouteLibrarySwipeDownload(in app: XCUIApplication, routeID: Int) {
-        let routeRow = firstExistingElement([
-            app.buttons["route-row-\(routeID)"],
-            app.staticTexts["Morning Marin Headlands 🌉"]
-        ], timeout: 8)
-
-        let swipeActionButton = app.buttons["route-library-swipe-download-\(routeID)"]
-        let labeledDownloadButton = matchingButton(in: app, label: "Download")
-
-        for _ in 0..<4 where !swipeActionButton.exists && !labeledDownloadButton.exists {
-            let start = routeRow.coordinate(withNormalizedOffset: CGVector(dx: 0.14, dy: 0.5))
-            let end = routeRow.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5))
-            start.press(forDuration: 0.02, thenDragTo: end)
-            RunLoop.current.run(until: Date().addingTimeInterval(0.35))
-
-            if app.buttons["Done"].exists {
-                app.buttons["Done"].tap()
-                waitForLibraryReady(in: app)
-            }
-        }
-    }
-
-    private func swipeUpInsideBottomSheet(in app: XCUIApplication) {
-        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9))
-        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.58))
-        start.press(forDuration: 0.01, thenDragTo: end)
-    }
-
-    private func tapTrackingBatterySaver(in app: XCUIApplication) {
-        let button = app.buttons["route-tracking-battery-saver"]
-        if button.waitForExistence(timeout: 3) {
-            button.tap()
-            return
-        }
-
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.79, dy: 0.91)).tap()
-    }
-
-    private func dismissTrackingContinuousGPSPromptIfPresent(in app: XCUIApplication) {
-        let dismissButtons = [
-            "route-tracking-continuous-gps-not-now",
-            "route-tracking-continuous-gps-keep",
-            "route-tracking-battery-saver-not-now"
-        ]
-
-        for identifier in dismissButtons {
-            let button = app.buttons[identifier]
-            if button.waitForExistence(timeout: 2) {
-                button.tap()
-                return
-            }
-        }
-    }
-
-    private func tapTrackingClose(in app: XCUIApplication) {
-        let button = app.buttons["route-tracking-close"]
-        if button.waitForExistence(timeout: 3) {
-            button.tap()
-            return
-        }
-
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.08)).tap()
-    }
-
-    private func navigateBackToRouteLibrary(in app: XCUIApplication) {
-        tapElement(firstExistingElement([
-            app.buttons["Terigo"],
-            app.navigationBars.buttons.element(boundBy: 0)
-        ], timeout: 8))
-    }
-
-    private func openSettingsMenu(in app: XCUIApplication) {
-        tapElement(firstExistingElement([
-            app.buttons["route-library-settings-button"],
-            app.buttons["Route library settings"]
-        ]))
-    }
-
-    private func waitForLibraryReady(in app: XCUIApplication, timeout: TimeInterval = 8) {
-        XCTAssertTrue(firstExistingElement([
-            app.buttons["route-library-sort-button"],
-            app.buttons["route-library-filters-button"],
-            app.buttons["route-library-open-map"]
-        ], timeout: timeout).exists)
-    }
-
-    private func tapMenuItem(
-        in app: XCUIApplication,
-        identifiers: [String],
-        labels: [String]
-    ) {
-        var candidates = identifiers.map { app.buttons[$0] }
-        candidates.append(contentsOf: labels.map { app.buttons[$0] })
-        candidates.append(contentsOf: labels.map { app.staticTexts[$0] })
-        tapElement(firstExistingElement(candidates))
-    }
-
-    private func tapElement(
-        _ element: XCUIElement,
-        timeout: TimeInterval = 5,
-        file: StaticString = #filePath,
-        line: UInt = #line
-    ) {
-        XCTAssertTrue(element.waitForExistence(timeout: timeout), file: file, line: line)
-
-        if element.isHittable {
-            element.tap()
-            return
-        }
-
-        let coordinate = element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        coordinate.tap()
-    }
-
-    private func firstExistingElement(
-        _ elements: [XCUIElement],
-        timeout: TimeInterval = 5
-    ) -> XCUIElement {
-        let deadline = Date().addingTimeInterval(timeout)
-
-        repeat {
-            for element in elements where element.exists {
-                return element
-            }
-
+            if condition() { return true }
             RunLoop.current.run(until: Date().addingTimeInterval(0.1))
         } while Date() < deadline
-
-        for element in elements where element.exists {
-            return element
-        }
-
-        XCTFail("None of the expected elements appeared: \(elements.map { $0.debugDescription }.joined(separator: ", "))")
-        return elements[0]
-    }
-
-    private func matchingButton(in app: XCUIApplication, label: String) -> XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label == %@", label)).firstMatch
-    }
-
-    private func matchingStaticText(in app: XCUIApplication, label: String) -> XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label == %@", label)).firstMatch
-    }
-
-    private func matchingOtherElement(in app: XCUIApplication, label: String) -> XCUIElement {
-        app.otherElements.matching(NSPredicate(format: "label == %@", label)).firstMatch
-    }
-
-    private func waitForButtonEnabled(_ button: XCUIElement, timeout: TimeInterval) -> Bool {
-        let predicate = NSPredicate(format: "exists == true AND enabled == true")
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: button)
-        return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
-    }
-}
-
-private extension XCUIElement {
-    func waitAndTap(timeout: TimeInterval = 5, file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertTrue(waitForExistence(timeout: timeout), file: file, line: line)
-        tap()
+        return condition()
     }
 }

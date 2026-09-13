@@ -291,7 +291,7 @@ enum AppRouteListDensity: String, CaseIterable, Identifiable {
     case expanded
 
     static let storageKey = "appRouteListDensity"
-    static let defaultValue: AppRouteListDensity = .compact
+    static let defaultValue: AppRouteListDensity = .medium
 
     var id: String { rawValue }
 
@@ -438,8 +438,8 @@ struct RouteMapSettingsButton: View {
             }
         } label: {
             Image(systemName: "slider.horizontal.3")
-                .font(.headline.weight(.bold))
-                .frame(width: 40, height: 40)
+                .font(.system(size: 18, weight: .semibold))
+                .frame(width: 44, height: 44)
                 .background(.ultraThinMaterial, in: Circle())
         }
         .buttonStyle(.plain)
@@ -494,6 +494,10 @@ enum AppUITestSupport {
         }
 
         resetPersistedState()
+        let arguments = ProcessInfo.processInfo.arguments
+        if let appearance = arguments.first(where: { $0.hasPrefix("--ui-appearance=") })?.split(separator: "=").last {
+            UserDefaults.standard.set(String(appearance), forKey: AppAppearance.storageKey)
+        }
     }
 
     static func makeModelConfiguration() -> ModelConfiguration {
@@ -542,6 +546,26 @@ enum AppUITestSupport {
         }
 
         try? context.save()
+        // Synthetic sensor streams exercise the same analysis path as a Strava sync.
+        if let activity = activities.first {
+            Task { @MainActor in
+                let samples = (0...348).map(Double.init)
+                let stream: ([Double]) -> StravaNumericStreamPayload = { .init(data: $0) }
+                let streams = StravaActivityStreamsPayload(
+                    distance: stream(samples.map { activity.distanceMeters * $0 / 348 }),
+                    altitude: stream(samples.map { 12 + $0 * 1.23 + 15 * sin($0 / 20) }),
+                    heartrate: stream(samples.map { 145 + $0 / 30 + 6 * sin($0 / 15) }),
+                    velocitySmooth: stream(samples.map { 3.45 + 0.3 * sin($0 / 20) }),
+                    gradeSmooth: stream(samples.map { Int($0 / 60) % 2 == 0 ? 0.8 : 4.5 }),
+                    moving: stream(samples.map { $0 < 325 ? 1 : 0 }),
+                    temp: stream(samples.map { 18 + $0 / 100 }),
+                    time: stream(samples.map { $0 * 10 })
+                )
+                let analysis = await ActivityEffortAnalysisService.analyze(activity: activity, streams: streams)
+                activity.applyEffortAnalysis(analysis)
+                try? context.save()
+            }
+        }
     }
 
     static func makeStubSession() -> StravaSession {
@@ -580,8 +604,23 @@ enum AppUITestSupport {
         normalizedAccessCode(code) == normalizedReviewDemoAccessCode
     }
 
+    private enum ReviewDemoError: LocalizedError {
+        case libraryNotEmpty
+        var errorDescription: String? {
+            "Demo mode needs an empty library. Your saved routes, activities, and lists have been kept."
+        }
+    }
+
     @MainActor
     static func activateReviewDemo(using context: ModelContext) throws {
+        // Access codes must never replace an existing personal library.
+        let hasRoutes = try context.fetchCount(FetchDescriptor<RouteRecord>()) > 0
+        let hasActivities = try context.fetchCount(FetchDescriptor<ActivityRecord>()) > 0
+        let hasLists = try context.fetchCount(FetchDescriptor<RouteList>()) > 0
+        let hasStartAreas = try context.fetchCount(FetchDescriptor<RouteStartHub>()) > 0
+        guard !hasRoutes, !hasActivities, !hasLists, !hasStartAreas else {
+            throw ReviewDemoError.libraryNotEmpty
+        }
         UserDefaults.standard.set(true, forKey: reviewDemoModeDefaultsKey)
         resetPersistedState()
         try clearStoredModels(in: context)
@@ -598,6 +637,7 @@ enum AppUITestSupport {
     private static func resetPersistedState() {
         let defaults = UserDefaults.standard
         [
+            "terigo.localLibraryEnabled",
             AppAppearance.storageKey,
             AppMeasurementSystem.storageKey,
             AppRouteListDensity.storageKey,
@@ -1220,37 +1260,72 @@ enum AppUITestSupport {
 
 @main
 struct StravaVaultApp: App {
-    @AppStorage(AppAppearance.storageKey) private var appAppearanceRawValue = AppAppearance.dark.rawValue
-
-    let modelContainer: ModelContainer
+    @AppStorage(AppAppearance.storageKey) private var appAppearanceRawValue = AppAppearance.system.rawValue
+    @State private var modelContainer: ModelContainer?
+    @State private var storageError: String?
 
     init() {
+        AppUITestSupport.prepareForLaunch()
+        RouteVaultMapboxConfiguration.configure()
         do {
-            AppUITestSupport.prepareForLaunch()
-            RouteVaultMapboxConfiguration.configure()
-            let configuration = AppUITestSupport.makeModelConfiguration()
-            modelContainer = try ModelContainer(
-                for: RouteRecord.self,
-                ActivityRecord.self,
-                RouteList.self,
-                RouteStartHub.self,
-                configurations: configuration
-            )
-            AppUITestSupport.seedDemoDataIfNeeded(in: modelContainer)
+            if AppUITestSupport.isEnabled && ProcessInfo.processInfo.arguments.contains("--ui-test-storage-failure") {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            _modelContainer = State(initialValue: try Self.openModelContainer())
+            _storageError = State(initialValue: nil)
         } catch {
-            fatalError("Failed to create model container: \(error)")
+            _modelContainer = State(initialValue: nil)
+            _storageError = State(initialValue: error.localizedDescription)
         }
     }
 
     var body: some Scene {
         WindowGroup {
-            RouteVaultRootScreen()
-                .preferredColorScheme(appAppearance.colorScheme)
+            Group {
+                if let modelContainer {
+                    RouteVaultRootScreen()
+                        .modelContainer(modelContainer)
+                } else {
+                    ContentUnavailableView {
+                        Label("Your library couldn’t open", systemImage: "externaldrive.badge.exclamationmark")
+                    } description: {
+                        Text("Try opening it again. If this continues, contact support for help recovering your saved routes.")
+                        if let storageError {
+                            Text(storageError).font(.footnote)
+                        }
+                    } actions: {
+                        Button("Try Again", action: retryOpeningLibrary)
+                            .buttonStyle(.borderedProminent)
+                            .accessibilityIdentifier("library-retry-open")
+                        Link("Contact Support", destination: URL(string: "mailto:yaportmax@gmail.com")!)
+                    }
+                    .background(TerigoTheme.background.ignoresSafeArea())
+                }
+            }
+            .tint(TerigoTheme.accent)
+            .preferredColorScheme(appAppearance.colorScheme)
         }
-        .modelContainer(modelContainer)
+    }
+
+    private static func openModelContainer() throws -> ModelContainer {
+        let container = try ModelContainer(
+            for: RouteRecord.self, ActivityRecord.self, RouteList.self, RouteStartHub.self,
+            configurations: AppUITestSupport.makeModelConfiguration()
+        )
+        AppUITestSupport.seedDemoDataIfNeeded(in: container)
+        return container
+    }
+
+    private func retryOpeningLibrary() {
+        do {
+            modelContainer = try Self.openModelContainer()
+            storageError = nil
+        } catch {
+            storageError = error.localizedDescription
+        }
     }
 
     private var appAppearance: AppAppearance {
-        AppAppearance(rawValue: appAppearanceRawValue) ?? .dark
+        AppAppearance(rawValue: appAppearanceRawValue) ?? .system
     }
 }

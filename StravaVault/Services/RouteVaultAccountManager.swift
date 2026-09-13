@@ -88,7 +88,7 @@ final class RouteVaultAccountManager {
     }
 
     var canUseBackendFeatures: Bool {
-        accountSession != nil
+        accountSession != nil && !AppUITestSupport.isEnabled
     }
 
     var accountCode: String? {
@@ -141,8 +141,8 @@ final class RouteVaultAccountManager {
         }
 
         do {
-            if AppUITestSupport.isReviewDemoEnabled {
-                installReviewerDemoState(statusMessage: "Reviewer demo mode is ready.")
+            if AppUITestSupport.shouldUseStubSession {
+                installReviewerDemoState(statusMessage: AppUITestSupport.isEnabled ? nil : "Reviewer demo mode is ready.")
                 return
             }
 
@@ -194,7 +194,10 @@ final class RouteVaultAccountManager {
 
             await bootstrapBackendAccountIfPossible(force: true)
         } catch {
-            errorMessage = connectErrorMessage(for: error)
+            if let authError = error as? ASWebAuthenticationSessionError, authError.code == .canceledLogin {
+                return
+            }
+            errorMessage = displayMessage(for: error)
         }
     }
 
@@ -389,28 +392,6 @@ final class RouteVaultAccountManager {
         }
 
         return error.localizedDescription
-    }
-
-    private func connectErrorMessage(for error: Error) -> String {
-        if let authError = error as? ASWebAuthenticationSessionError,
-           authError.code == .canceledLogin {
-            return stravaConnectionCapacityMessage
-        }
-
-        if let authError = error as? StravaAuthSessionCoordinator.AuthError {
-            switch authError {
-            case .missingCallbackURL:
-                return stravaConnectionCapacityMessage
-            case .unableToStart:
-                break
-            }
-        }
-
-        return displayMessage(for: error)
-    }
-
-    private var stravaConnectionCapacityMessage: String {
-        "Strava sign-in did not complete. If Strava showed “Error 403: Limit of connected athletes exceeded,” Terigo has reached Strava’s current new-user connection cap. New Strava sign-ins are blocked until the Strava app quota is increased."
     }
 
     private func handlePersistedSessionUpdate() async {

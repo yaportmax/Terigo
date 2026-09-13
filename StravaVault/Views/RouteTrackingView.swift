@@ -90,6 +90,7 @@ struct RouteTrackingView: View {
             Color.black.ignoresSafeArea()
 
             if session.hasTrackableGeometry {
+                if RouteVaultMapboxConfiguration.isConfigured {
                 RouteTrackingMapSurface(
                     route: route,
                     session: session,
@@ -101,6 +102,15 @@ struct RouteTrackingView: View {
                     onUserCameraInteraction: handleUserCameraInteraction
                 )
                 .ignoresSafeArea()
+                } else {
+                    TerigoNativeMap(tracks: [route.routeCoordinates, session.breadcrumbCoordinates],
+                                    centerRequest: recenterTrigger,
+                                    followCoordinate: followsUser ? session.currentLocation?.coordinate : nil,
+                                    followHeading: cameraFollowMode == .courseFollowing ? max(0, session.currentLocation?.course ?? 0) : 0,
+                                    onUserInteraction: handleUserCameraInteraction)
+                        .ignoresSafeArea()
+                }
+
             } else {
                 ContentUnavailableView(
                     "Route Tracking Unavailable",
@@ -127,7 +137,6 @@ struct RouteTrackingView: View {
             .padding(.bottom, 18)
         }
         .background(Color.black.ignoresSafeArea())
-        .accessibilityIdentifier("route-tracking-screen-\(route.stravaRouteID)")
         .routeTrackingIdleTimerDisabled(session.keepsScreenAwake)
         .interactiveDismissDisabled(true)
         .task {
@@ -135,10 +144,9 @@ struct RouteTrackingView: View {
                 session.startActivity()
             }
         }
-        .confirmationDialog(
+        .alert(
             "End Activity?",
-            isPresented: $isShowingEndConfirmation,
-            titleVisibility: Visibility.visible
+            isPresented: $isShowingEndConfirmation
         ) {
             Button("End Activity", role: .destructive) {
                 session.finishActivity()
@@ -191,8 +199,8 @@ struct RouteTrackingView: View {
         HStack(spacing: 12) {
             Button(action: handleCloseTapped) {
                 Image(systemName: session.canFinish ? "xmark" : "chevron.down")
-                    .font(.headline.weight(.bold))
-                    .frame(width: 42, height: 42)
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 44, height: 44)
                     .background(.ultraThinMaterial, in: Circle())
             }
             .buttonStyle(.plain)
@@ -210,8 +218,8 @@ struct RouteTrackingView: View {
                     followsUser = true
                 } label: {
                     Image(systemName: "scope")
-                        .font(.headline.weight(.bold))
-                        .frame(width: 42, height: 42)
+                        .font(.system(size: 18, weight: .semibold))
+                        .frame(width: 44, height: 44)
                         .background(.ultraThinMaterial, in: Circle())
                 }
                 .buttonStyle(.plain)
@@ -324,48 +332,22 @@ struct RouteTrackingView: View {
     private var batterySaverButton: some View {
         Button(action: handleBatterySaverTapped) {
             Image(systemName: session.usesContinuousTracking ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash")
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(
-                    session.usesContinuousTracking
-                        ? Color(red: 0.18, green: 0.82, blue: 0.69)
-                        : Color.white
-                )
-                .frame(width: 42, height: 42)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(session.usesContinuousTracking ? TerigoTheme.accent : Color.primary)
+                .frame(width: 44, height: 44)
                 .background(.ultraThinMaterial, in: Circle())
-                .shadow(color: .black.opacity(0.12), radius: 6, x: 0, y: 1)
-        }
-        .overlay(alignment: .bottomTrailing) {
-            Circle()
-                .fill(
-                    session.usesContinuousTracking
-                        ? Color(red: 0.18, green: 0.82, blue: 0.69)
-                        : Color(red: 0.96, green: 0.71, blue: 0.24)
-                )
-                .frame(width: 10, height: 10)
-                .overlay {
+                .overlay(alignment: .bottomTrailing) {
                     Circle()
-                        .strokeBorder(Color.black.opacity(0.18), lineWidth: 1)
+                        .fill(session.usesContinuousTracking ? TerigoTheme.accent : Color.orange)
+                        .frame(width: 10, height: 10)
+                        .offset(x: -3, y: -3)
+                        .accessibilityHidden(true)
                 }
-                .offset(x: -3, y: -3)
-        }
-        .overlay {
-            Circle()
-                .strokeBorder(
-                    session.usesContinuousTracking
-                        ? Color(red: 0.18, green: 0.82, blue: 0.69).opacity(0.32)
-                        : Color.white.opacity(0.08),
-                    lineWidth: 1
-                )
         }
         .buttonStyle(.plain)
-        .accessibilityElement(children: .ignore)
         .accessibilityLabel("Continuous GPS")
         .accessibilityValue(session.usesContinuousTracking ? "On" : "Off")
-        .accessibilityHint(
-            session.usesContinuousTracking
-                ? "Turns off continuous GPS tracking."
-                : "Turns on continuous GPS tracking."
-        )
+        .accessibilityHint(session.usesContinuousTracking ? "Turns off continuous GPS tracking." : "Turns on continuous GPS tracking.")
         .accessibilityIdentifier("route-tracking-battery-saver")
     }
 
@@ -485,24 +467,20 @@ struct RouteTrackingView: View {
     }
 
     private var trackingStatusMetric: (value: String, tint: Color) {
+        if session.phase == .finished { return ("Finished", .primary) }
+        if session.phase == .completed { return ("Complete", .primary) }
+        if session.phase == .paused { return ("Paused", .primary) }
         if session.phase == .awaitingPermission || session.permissionDenied || !hasFreshTrackingSignal || progress == nil {
-            return (
-                value: "No Signal",
-                tint: Color(red: 0.96, green: 0.71, blue: 0.24)
-            )
+            return ("No Signal", TerigoTheme.accent)
         }
-
         if progress?.isOffRoute == true {
-            return (
-                value: "Off Course",
-                tint: Color(red: 0.98, green: 0.52, blue: 0.43)
-            )
+            return ("Off Course", colorScheme == .dark
+                    ? Color(red: 0.98, green: 0.52, blue: 0.43)
+                    : Color(red: 0.70, green: 0.18, blue: 0.12))
         }
-
-        return (
-            value: "On Course",
-            tint: Color(red: 0.34, green: 0.86, blue: 0.64)
-        )
+        return ("On Course", colorScheme == .dark
+                ? Color(red: 0.34, green: 0.86, blue: 0.64)
+                : Color(red: 0.10, green: 0.38, blue: 0.26))
     }
 
     private func handleCloseTapped() {
@@ -608,94 +586,6 @@ struct RouteTrackingView: View {
     }
 }
 
-private struct RouteTrackingStatusBadge: View {
-    let phase: RouteTrackingPhase
-
-    private var tint: Color {
-        switch phase {
-        case .tracking:
-            return Color(red: 0.16, green: 0.78, blue: 0.67)
-        case .paused:
-            return Color(red: 0.96, green: 0.71, blue: 0.24)
-        case .completed:
-            return Color(red: 0.26, green: 0.80, blue: 0.60)
-        case .awaitingPermission, .locating:
-            return Color(red: 0.46, green: 0.67, blue: 0.98)
-        case .finished:
-            return Color(red: 0.76, green: 0.76, blue: 0.80)
-        case .idle:
-            return Color(red: 0.72, green: 0.72, blue: 0.76)
-        }
-    }
-
-    var body: some View {
-        Text(phase.title)
-            .font(.caption.weight(.bold))
-            .foregroundStyle(tint)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(tint.opacity(0.14), in: Capsule())
-    }
-}
-
-private struct RouteTrackingMetricCard: View {
-    let title: String
-    let value: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-
-            Text(value)
-                .font(.headline.weight(.bold))
-                .foregroundStyle(.primary)
-                .lineLimit(2)
-                .minimumScaleFactor(0.85)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-}
-
-private struct RouteTrackingCompactMetricPill: View {
-    let title: String
-    let value: String
-    let systemImage: String
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 8) {
-            Image(systemName: systemImage)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 16)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-                    .lineLimit(1)
-
-                Text(value)
-                    .font(.footnote.weight(.bold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 9)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-}
-
 private struct RouteTrackingMiniMetric: View {
     let title: String
     let value: String
@@ -733,36 +623,6 @@ private struct RouteTrackingPanelHeightPreferenceKey: PreferenceKey {
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
-    }
-}
-
-private struct RouteTrackingPrimaryButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.headline.weight(.bold))
-            .padding(.vertical, 14)
-            .foregroundStyle(.black)
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color(red: 0.18, green: 0.82, blue: 0.69).opacity(configuration.isPressed ? 0.85 : 1))
-            )
-    }
-}
-
-private struct RouteTrackingSecondaryButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.headline.weight(.bold))
-            .padding(.vertical, 14)
-            .foregroundStyle(.white)
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color.white.opacity(configuration.isPressed ? 0.10 : 0.06))
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
-            }
     }
 }
 

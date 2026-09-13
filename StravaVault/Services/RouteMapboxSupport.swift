@@ -21,9 +21,11 @@ enum RouteVaultMapboxConfiguration {
         return ""
     }
 
+    static var isConfigured: Bool { publicToken.hasPrefix("pk.") }
+
     static func configure() {
         let token = publicToken
-        guard !token.isEmpty else {
+        guard isConfigured else {
             return
         }
 
