@@ -50,7 +50,9 @@ struct ControlsSection: View {
             }
             .zIndex(1)
 
-            HStack {
+            let countLayout = dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4)) : AnyLayout(HStackLayout())
+            countLayout {
                 Text("\(model.filteredRoutes(from: allRoutes).count) \(model.filteredRoutes(from: allRoutes).count == 1 ? "route" : "routes")")
                     .font(.subheadline.weight(.semibold))
                 Spacer()

@@ -117,22 +117,25 @@ private struct RouteLibraryResultRow: View {
     }
 
     var body: some View {
-        SwipeRevealRow(
-            leadingActions: leadingSwipeActions,
-            trailingActions: trailingSwipeActions
-        ) {
-            RouteCardView(route: route, density: density, onSelect: onSelect)
-                .contextMenu {
-                    quickActionMenu
+        RouteCardView(route: route, density: density, onSelect: onSelect)
+            .contextMenu { quickActionMenu }
+            .overlay(alignment: .topTrailing) {
+                Menu { quickActionMenu } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.body.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                        .background(TerigoTheme.surface, in: Circle())
                 }
-                .sheet(isPresented: $isShowingCreateListSheet) {
-                    NavigationStack {
-                        QuickCreateListSheet { listName in
-                            createListAndAddRoute(named: listName)
-                        }
-                    }
-                    .presentationDetents([.medium])
+                .tint(.secondary)
+                .accessibilityLabel("Actions for \(route.name)")
+                .accessibilityIdentifier("route-actions-\(route.stravaRouteID)")
+                .padding(density == .compact ? 0 : density.contentPadding)
+            }
+            .sheet(isPresented: $isShowingCreateListSheet) {
+                NavigationStack {
+                    QuickCreateListSheet { listName in createListAndAddRoute(named: listName) }
                 }
+                .presentationDetents([.medium])
             }
         .alert("Delete Route?", isPresented: $isShowingDeleteConfirmation) {
             Button("Delete Route", role: .destructive) { onDeleteRoute(route) }
@@ -140,61 +143,6 @@ private struct RouteLibraryResultRow: View {
         } message: {
             Text("This removes the route and its saved offline files from your library.")
         }
-    }
-
-    private var leadingSwipeActions: [SwipeRevealAction] {
-        var actions: [SwipeRevealAction] = []
-
-        if offlineStatus.hasConcreteAssets {
-            actions.append(
-                SwipeRevealAction(
-                    title: "Remove",
-                    systemImage: "trash",
-                    tint: .red,
-                    isEnabled: !isDownloadingOffline
-                ) {
-                    removeOfflineDownload()
-                }
-            )
-        } else {
-            actions.append(
-                SwipeRevealAction(
-                    title: isDownloadingOffline ? "Saving" : "Download",
-                    systemImage: "arrow.down.circle",
-                    tint: .blue,
-                    accessibilityIdentifier: "route-library-swipe-download-\(route.stravaRouteID)",
-                    isEnabled: !isDownloadingOffline
-                ) {
-                    Task { await downloadOfflineBundle() }
-                }
-            )
-        }
-
-        if route.startCoordinate != nil {
-            actions.append(
-                SwipeRevealAction(
-                    title: "Navigate",
-                    systemImage: "location.fill.viewfinder",
-                    tint: .green
-                ) {
-                    openStartInMaps()
-                }
-            )
-        }
-
-        return actions
-    }
-
-    private var trailingSwipeActions: [SwipeRevealAction] {
-        [
-            SwipeRevealAction(
-                title: "Delete",
-                systemImage: "trash",
-                tint: .red
-            ) {
-                isShowingDeleteConfirmation = true
-            }
-        ]
     }
 
     @ViewBuilder
@@ -347,162 +295,6 @@ private struct RouteLibraryResultRow: View {
         } catch {
             onReportError(error.localizedDescription)
         }
-    }
-}
-
-private struct SwipeRevealAction: Identifiable {
-    let id = UUID()
-    let title: String
-    let systemImage: String
-    let tint: Color
-    var accessibilityIdentifier: String? = nil
-    var isEnabled: Bool = true
-    let action: () -> Void
-}
-
-private struct SwipeRevealRow<Content: View>: View {
-    let leadingActions: [SwipeRevealAction]
-    let trailingActions: [SwipeRevealAction]
-    @ViewBuilder let content: () -> Content
-
-    @State private var settledOffset: CGFloat = 0
-    @GestureState private var dragTranslation: CGFloat = 0
-
-    private let actionWidth: CGFloat = 92
-    private let swipeAnimation = Animation.interactiveSpring(response: 0.28, dampingFraction: 0.84)
-
-    private var visibleOffset: CGFloat {
-        clampOffset(settledOffset + dragTranslation)
-    }
-
-    private var leadingWidth: CGFloat {
-        CGFloat(leadingActions.count) * actionWidth
-    }
-
-    private var trailingWidth: CGFloat {
-        CGFloat(trailingActions.count) * actionWidth
-    }
-
-    var body: some View {
-        ZStack {
-            if !leadingActions.isEmpty, visibleOffset > 8 {
-                HStack(spacing: 0) {
-                    ForEach(leadingActions) { action in
-                        SwipeRevealActionButton(action: action)
-                            .frame(width: actionWidth)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-            }
-
-            if !trailingActions.isEmpty, visibleOffset < -8 {
-                HStack(spacing: 0) {
-                    Spacer(minLength: 0)
-
-                    ForEach(trailingActions) { action in
-                        SwipeRevealActionButton(action: action)
-                            .frame(width: actionWidth)
-                    }
-                }
-            }
-
-            content()
-                .background(rowBackground)
-                .offset(x: visibleOffset)
-
-            if abs(visibleOffset) > 8 {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .offset(x: visibleOffset)
-                    .onTapGesture {
-                        withAnimation(swipeAnimation) {
-                            settledOffset = 0
-                        }
-                    }
-            }
-        }
-        .clipped()
-        .contentShape(Rectangle())
-        .simultaneousGesture(dragGesture)
-        .animation(swipeAnimation, value: settledOffset)
-    }
-
-    private var rowBackground: some View {
-        RoundedRectangle(cornerRadius: 22, style: .continuous)
-            .fill(TerigoTheme.surface)
-    }
-
-    private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 12, coordinateSpace: .local)
-            .updating($dragTranslation) { value, state, _ in
-                guard abs(value.translation.width) > abs(value.translation.height) else {
-                    return
-                }
-
-                state = value.translation.width
-            }
-            .onEnded { value in
-                guard abs(value.translation.width) > abs(value.translation.height) else {
-                    return
-                }
-
-                let proposedOffset = clampOffset(settledOffset + value.translation.width)
-                let predictedOffset = clampOffset(settledOffset + value.predictedEndTranslation.width)
-
-                withAnimation(swipeAnimation) {
-                    settledOffset = targetOffset(
-                        proposedOffset: proposedOffset,
-                        predictedOffset: predictedOffset
-                    )
-                }
-            }
-    }
-
-    private func clampOffset(_ value: CGFloat) -> CGFloat {
-        min(max(value, -trailingWidth), leadingWidth)
-    }
-
-    private func targetOffset(proposedOffset: CGFloat, predictedOffset: CGFloat) -> CGFloat {
-        let leadingThreshold = max(actionWidth * 0.45, leadingWidth * 0.4)
-        let trailingThreshold = max(actionWidth * 0.45, trailingWidth * 0.4)
-
-        if proposedOffset > 0, !leadingActions.isEmpty {
-            return max(proposedOffset, predictedOffset) > leadingThreshold ? leadingWidth : 0
-        }
-
-        if proposedOffset < 0, !trailingActions.isEmpty {
-            return min(proposedOffset, predictedOffset) < -trailingThreshold ? -trailingWidth : 0
-        }
-
-        return 0
-    }
-}
-
-private struct SwipeRevealActionButton: View {
-    let action: SwipeRevealAction
-
-    var body: some View {
-        Button {
-            action.action()
-        } label: {
-            VStack(spacing: 6) {
-                Image(systemName: action.systemImage)
-                    .font(.system(size: 18, weight: .semibold))
-
-                Text(action.title)
-                    .font(.caption2.weight(.semibold))
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.vertical, 14)
-            .foregroundStyle(.white)
-            .background(action.tint.gradient)
-        }
-        .buttonStyle(.plain)
-        .disabled(!action.isEnabled)
-        .accessibilityIdentifier(action.accessibilityIdentifier ?? "")
     }
 }
 

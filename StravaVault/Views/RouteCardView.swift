@@ -80,7 +80,9 @@ private struct CompactRouteListRow: View {
 
                 Spacer(minLength: 0)
 
-                Image(systemName: "chevron.right")
+                Color.clear
+                    .frame(width: 44, height: 44)
+                    .accessibilityHidden(true)
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.tertiary)
             }
@@ -149,30 +151,26 @@ private struct MediumRouteCardContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .center, spacing: 14) {
-                RouteTraceThumbnail(coordinates: route.routeCoordinates)
-                    .frame(width: 52, height: 64)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(route.sportDisplayName.uppercased())
-                        .font(.caption2.weight(.bold))
-                        .tracking(1)
-                        .foregroundStyle(TerigoTheme.accent)
-                    Text(route.name)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
-                    if !route.displayLocation.isEmpty {
-                        Text(route.displayLocation)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 12) {
+                        routeThumbnail
+                        sportLabel
+                        Spacer(minLength: 44)
                     }
+                    routeTitle
+                    locationLabel
                 }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+            } else {
+                HStack(alignment: .top, spacing: 12) {
+                    routeThumbnail
+                    VStack(alignment: .leading, spacing: 5) {
+                        sportLabel
+                        routeTitle
+                        locationLabel
+                    }
+                    Spacer(minLength: 44)
+                }
             }
             RouteMetricRow(route: route, size: .regular)
             HStack(spacing: 8) {
@@ -196,6 +194,30 @@ private struct MediumRouteCardContent: View {
 
         }
     }
+    private var routeThumbnail: some View {
+        RouteTraceThumbnail(coordinates: route.routeCoordinates)
+            .frame(width: 52, height: 64)
+            .accessibilityHidden(true)
+    }
+    private var sportLabel: some View {
+        Text(route.sportDisplayName.uppercased())
+            .font(.caption2.weight(.bold))
+            .tracking(1)
+            .foregroundStyle(TerigoTheme.accent)
+    }
+    private var routeTitle: some View {
+        Text(route.name)
+            .font(.headline)
+            .foregroundStyle(.primary)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+    @ViewBuilder private var locationLabel: some View {
+        if !route.displayLocation.isEmpty {
+            Text(route.displayLocation).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+        }
+    }
+
 }
 
 /// A local route outline makes each card recognizable without tile requests.
@@ -304,7 +326,9 @@ private struct RouteTitleBlock: View {
 
             Spacer(minLength: 0)
 
-            Image(systemName: "chevron.right")
+            Color.clear
+                    .frame(width: 44, height: 44)
+                    .accessibilityHidden(true)
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.tertiary)
         }
@@ -312,22 +336,27 @@ private struct RouteTitleBlock: View {
 }
 
 private struct RouteMetricRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let route: RouteRecord
     let size: RouteCardElementSize
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: size.rowSpacing) {
-                metricViews
-            }
-
-            VStack(alignment: .leading, spacing: size.rowSpacing) {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: size.rowSpacing) { metricViews }
+        } else {
+            ViewThatFits(in: .horizontal) {
                 HStack(spacing: size.rowSpacing) {
-                    MetricPill(iconName: "ruler", text: RouteDisplayFormatter.distance(route.distanceMeters), size: size)
-                    MetricPill(iconName: "mountain.2.fill", text: RouteDisplayFormatter.climb(route.elevationGainMeters), size: size)
+                    metricViews
                 }
 
-                MetricPill(iconName: "clock.fill", text: RouteDisplayFormatter.duration(route.estimatedMovingTime), size: size)
+                VStack(alignment: .leading, spacing: size.rowSpacing) {
+                    HStack(spacing: size.rowSpacing) {
+                        MetricPill(iconName: "ruler", text: RouteDisplayFormatter.distance(route.distanceMeters), size: size)
+                        MetricPill(iconName: "mountain.2.fill", text: RouteDisplayFormatter.climb(route.elevationGainMeters), size: size)
+                    }
+
+                    MetricPill(iconName: "clock.fill", text: RouteDisplayFormatter.duration(route.estimatedMovingTime), size: size)
+                }
             }
         }
     }
@@ -392,7 +421,9 @@ private struct RouteFooterLine: View {
 
             Spacer(minLength: 0)
 
-            Image(systemName: "chevron.right")
+            Color.clear
+                    .frame(width: 44, height: 44)
+                    .accessibilityHidden(true)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.tertiary)
         }

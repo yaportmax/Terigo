@@ -316,32 +316,6 @@ struct RouteFiltersSheet: View {
         return lowerBound ... max(lowerBound + 100, upperBound)
     }
 
-    private var distanceFilterSummary: String {
-        switch (model.selectedDistanceMinimumMiles, model.selectedDistanceMaximumMiles) {
-        case (nil, nil):
-            return "Any distance"
-        case let (minimumMiles?, maximumMiles?):
-            return "\(RouteDisplayFormatter.distanceMiles(minimumMiles)) - \(RouteDisplayFormatter.distanceMiles(maximumMiles))"
-        case let (minimumMiles?, nil):
-            return "\(RouteDisplayFormatter.distanceMiles(minimumMiles))+"
-        case let (nil, maximumMiles?):
-            return "Up to \(RouteDisplayFormatter.distanceMiles(maximumMiles))"
-        }
-    }
-
-    private var climbFilterSummary: String {
-        switch (model.selectedClimbMinimumFeet, model.selectedClimbMaximumFeet) {
-        case (nil, nil):
-            return "Any climb"
-        case let (minimumFeet?, maximumFeet?):
-            return "\(RouteDisplayFormatter.climbFeet(minimumFeet)) - \(RouteDisplayFormatter.climbFeet(maximumFeet))"
-        case let (minimumFeet?, nil):
-            return "\(RouteDisplayFormatter.climbFeet(minimumFeet))+"
-        case let (nil, maximumFeet?):
-            return "Up to \(RouteDisplayFormatter.climbFeet(maximumFeet))"
-        }
-    }
-
     private func resetControls() {
         model.selectedMovements = [.all]
         model.selectedSports = [.all]

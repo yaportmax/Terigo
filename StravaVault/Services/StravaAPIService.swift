@@ -88,6 +88,7 @@ struct StravaAPIService {
         case rateLimited(String, retryAfter: Date?)
         case server(String)
         case unauthorized
+        case missingPermission(String)
         case badResponse(String?)
         case missingRouteData
         case transport(URLError, URL?)
@@ -125,6 +126,8 @@ struct StravaAPIService {
                 return message
             case let .server(message):
                 return message
+            case let .missingPermission(scope):
+                return "Strava hasn’t granted \(scope) permission. Reconnect Strava and allow the requested access to use this feature."
             case .unauthorized:
                 return "Your Strava session is no longer authorized. Reconnect and try again."
             case let .badResponse(message):
@@ -226,7 +229,12 @@ struct StravaAPIService {
             throw APIError.invalidRedirect
         }
 
-        let items = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+        var items: [String: String] = [:]
+        for item in components.queryItems ?? [] {
+            guard items.updateValue(item.value ?? "", forKey: item.name) == nil else {
+                throw APIError.invalidRedirect
+            }
+        }
 
         if items["error"] == "access_denied" {
             throw APIError.cancelled
@@ -625,25 +633,8 @@ struct StravaAPIService {
             throw APIError.badResponse(nil)
         }
 
-        if !(200 ... 299).contains(httpResponse.statusCode) {
-            let fault = try? decoder.decode(StravaFault.self, from: data)
-
-            if isAuthorizationFailure(statusCode: httpResponse.statusCode, fault: fault, requestURL: request.url) {
-                throw APIError.unauthorized
-            }
-
-            switch httpResponse.statusCode {
-            case 401:
-                throw APIError.unauthorized
-            case 429:
-                let retryAfter = rateLimitResetDate(from: httpResponse)
-                throw APIError.rateLimited(
-                    rateLimitMessage(fallback: fault?.displayMessage, retryAfter: retryAfter),
-                    retryAfter: retryAfter
-                )
-            default:
-                throw APIError.server(fault?.displayMessage ?? "Strava returned HTTP \(httpResponse.statusCode).")
-            }
+        if let error = responseError(for: httpResponse, data: data, requestURL: request.url) {
+            throw error
         }
 
         do {
@@ -669,25 +660,8 @@ struct StravaAPIService {
             throw APIError.badResponse(nil)
         }
 
-        if !(200 ... 299).contains(httpResponse.statusCode) {
-            let fault = try? decoder.decode(StravaFault.self, from: data)
-
-            if isAuthorizationFailure(statusCode: httpResponse.statusCode, fault: fault, requestURL: request.url) {
-                throw APIError.unauthorized
-            }
-
-            switch httpResponse.statusCode {
-            case 401:
-                throw APIError.unauthorized
-            case 429:
-                let retryAfter = rateLimitResetDate(from: httpResponse)
-                throw APIError.rateLimited(
-                    rateLimitMessage(fallback: fault?.displayMessage, retryAfter: retryAfter),
-                    retryAfter: retryAfter
-                )
-            default:
-                throw APIError.server(fault?.displayMessage ?? "Strava returned HTTP \(httpResponse.statusCode).")
-            }
+        if let error = responseError(for: httpResponse, data: data, requestURL: request.url) {
+            throw error
         }
 
         guard !data.isEmpty else {
@@ -695,6 +669,27 @@ struct StravaAPIService {
         }
 
         return data
+    }
+
+    func responseError(for response: HTTPURLResponse, data: Data, requestURL: URL?) -> APIError? {
+        guard !(200 ... 299).contains(response.statusCode) else { return nil }
+        let fault = try? decoder.decode(StravaFault.self, from: data)
+        // Strava also returns 401 for a valid token without the required scope.
+        // Preserve that session so features with granted access keep working.
+        if [401, 403].contains(response.statusCode),
+           let permission = fault?.errors?.first(where: {
+               $0.code == "missing" && $0.field?.hasSuffix("_permission") == true
+           })?.field {
+            return .missingPermission(String(permission.dropLast("_permission".count)))
+        }
+        if isAuthorizationFailure(statusCode: response.statusCode, fault: fault, requestURL: requestURL) {
+            return .unauthorized
+        }
+        if response.statusCode == 429 {
+            let retryAfter = rateLimitResetDate(from: response)
+            return .rateLimited(rateLimitMessage(fallback: fault?.displayMessage, retryAfter: retryAfter), retryAfter: retryAfter)
+        }
+        return .server(fault?.displayMessage ?? "Strava returned HTTP \(response.statusCode).")
     }
 
     private func isAuthorizationFailure(statusCode: Int, fault: StravaFault?, requestURL: URL?) -> Bool {

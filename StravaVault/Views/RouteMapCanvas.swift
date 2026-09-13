@@ -973,7 +973,9 @@ struct TerigoNativeMap: View {
                 if let requestedRegion { position = .region(requestedRegion) }
             }
             .onChange(of: centerRequest) { _, _ in position = .userLocation(fallback: .automatic) }
-            .onChange(of: fitRequest) { _, _ in position = .automatic }
+            .onChange(of: fitRequest) { _, _ in
+                position = requestedRegion.map { .region($0) } ?? .automatic
+            }
             .onChange(of: followCoordinate?.latitude) { _, _ in followLocation() }
             .onChange(of: followCoordinate?.longitude) { _, _ in followLocation() }
             .onChange(of: perspectiveRawValue) { _, _ in applyPerspective() }

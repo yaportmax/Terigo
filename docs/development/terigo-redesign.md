@@ -41,3 +41,11 @@ The `iOS simulator validation` workflow builds the real `StravaVault` scheme on 
 The visual tour covers light and dark appearance, the four destinations, route and activity details, filters, sorting, offline management, list creation and deletion, tracking, welcome and local use, account, feedback, export, storage recovery, large text, and landscape. Results and remaining limitations are recorded with the pull request after inspecting the exported images.
 
 Simulator fixtures do not verify live Strava credentials, hosted sharing permissions, physical GPS accuracy, background battery use, App Store signing, or real offline Mapbox tile downloads. Those require the configured services or a physical device. This change does not deploy backend functions, migrate the database, or publish an App Store build.
+
+## Strava connection check — 13 September 2026
+
+The public client ID is configured as `168528`; no developer secret or test token is bundled. Normal use still goes through Connect with Strava, browser consent, callback-state verification, server token exchange, and Keychain storage. A working auth broker must be configured for release builds. The documented Supabase endpoint could not be reached from this environment, so end-to-end production login is not yet verified.
+
+An authorized, temporary developer token successfully read the athlete profile, route list, route detail, and a valid GPX export. Activity access returned Strava's `activity:read_permission` fault because that token has only `read` scope. The client now distinguishes this permission fault from an invalid session and preserves access to already authorized features. All simulator fixtures remain synthetic.
+
+Route actions are available from an explicit ellipsis menu and a long press. This replaces custom swipe handling that interfered with vertical scrolling, while preserving offline downloads/removal, directions to the start, list membership and creation, Strava links, and deletion.

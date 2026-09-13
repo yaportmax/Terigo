@@ -27,10 +27,13 @@ final class StravaVaultCleanUITests: XCTestCase {
         XCTAssertTrue(app.buttons["route-row-4002"].waitForExistence(timeout: 8))
         XCTAssertTrue(waitUntil { !app.buttons["route-row-4001"].exists })
         capture("search-filtered", app)
-        tap(app.buttons["Clear search"])
-        app.swipeDown()
+        search.typeText("\n")
         tapTab("Activities", app)
         tapTab("Routes", app)
+        XCTAssertEqual(search.value as? String, "Presidio")
+        XCTAssertTrue(app.buttons["route-row-4002"].exists)
+        tap(app.buttons["Clear search"])
+        app.swipeDown()
         XCTAssertTrue(app.buttons["route-row-4001"].waitForExistence(timeout: 8))
         tap(search)
         search.typeText("NoSuchRouteAnywhere")
@@ -83,6 +86,7 @@ final class StravaVaultCleanUITests: XCTestCase {
         }
         XCTAssertTrue(app.buttons["route-row-4001"].waitForExistence(timeout: 12))
         tapTab("Explore", app)
+        tap(app.buttons["Fit routes on map"])
         tap(app.buttons["Open map full screen"])
         capture("explore-fullscreen", app)
         tap(app.buttons["Close"])
@@ -274,6 +278,9 @@ final class StravaVaultCleanUITests: XCTestCase {
         let exists = element.waitForExistence(timeout: 10)
         if !exists { capture("failure-missing-control", XCUIApplication()) }
         XCTAssertTrue(exists, file: file, line: line)
+        let hittable = waitUntil(timeout: 10) { element.isHittable }
+        if !hittable { capture("failure-covered-control", XCUIApplication()) }
+        XCTAssertTrue(hittable, "Control is covered or off screen: \(element)", file: file, line: line)
         element.tap()
     }
     private func capture(_ name: String, _ app: XCUIApplication) {

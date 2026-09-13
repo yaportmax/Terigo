@@ -361,6 +361,8 @@ struct SearchField: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
+                .font(.body)
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                 .foregroundStyle(.secondary)
             TextField(placeholder, text: $text)
                 .focused($isFocused)

@@ -5,6 +5,38 @@ import SwiftData
 
 @MainActor
 final class ActivitiesModelTests: XCTestCase {
+    func testStravaPermissionFaultPreservesAValidSession() throws {
+        let service = StravaAPIService()
+        let url = URL(string: "https://www.strava.com/api/v3/athlete/activities")!
+        let response = HTTPURLResponse(url: url, statusCode: 401, httpVersion: nil, headerFields: nil)!
+        let payload = Data(#"{"message":"Authorization Error","errors":[{"resource":"AccessToken","field":"activity:read_permission","code":"missing"}]}"#.utf8)
+        let error = try XCTUnwrap(service.responseError(for: response, data: payload, requestURL: url))
+        guard case .missingPermission("activity:read") = error else { return XCTFail("Expected a permission request") }
+        XCTAssertFalse(error.requiresSessionReset)
+        XCTAssertTrue(error.localizedDescription.contains("Reconnect Strava"))
+        let invalid = Data(#"{"message":"Authorization Error","errors":[{"resource":"AccessToken","field":"access_token","code":"invalid"}]}"#.utf8)
+        XCTAssertTrue(try XCTUnwrap(service.responseError(for: response, data: invalid, requestURL: url)).requiresSessionReset)
+    }
+
+    func testStravaOAuthUsesBrowserAuthorizationAndRejectsAmbiguousCallbacks() throws {
+        let service = StravaAPIService()
+        let credentials = StravaAppCredentials(clientID: "168528", clientSecret: nil,
+            redirectScheme: "routevault", redirectHost: "localhost", authBrokerBaseURLString: "https://example.com/strava-auth-broker")
+        let url = service.authorizationURL(credentials: credentials, state: "expected")
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)!.queryItems!
+        XCTAssertEqual(url.host, "www.strava.com")
+        XCTAssertEqual(items.first { $0.name == "redirect_uri" }?.value, "routevault://localhost/oauth-callback")
+        XCTAssertTrue(items.first { $0.name == "scope" }!.value!.contains("activity:read"))
+        XCTAssertFalse(items.contains { $0.name == "client_secret" || $0.name == "access_token" })
+        let callback = URL(string: "routevault://localhost/oauth-callback?state=expected&code=one-time-code&scope=read,activity:read")!
+        let result = try service.parseCallback(callback, expectedState: "expected")
+        XCTAssertEqual(result.authorizationCode, "one-time-code")
+        XCTAssertEqual(result.acceptedScopes, ["read", "activity:read"])
+        XCTAssertThrowsError(try service.parseCallback(callback, expectedState: "wrong"))
+        let ambiguous = URL(string: callback.absoluteString + "&state=second")!
+        XCTAssertThrowsError(try service.parseCallback(ambiguous, expectedState: "expected"))
+    }
+
     func testRangeInputRequiresAWholeLocalizedNumber() {
         let us = Locale(identifier: "en_US")
         XCTAssertEqual(RouteDisplayFormatter.parseNumericInput("1,234.5", locale: us), 1234.5)

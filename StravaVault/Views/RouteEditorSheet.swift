@@ -156,7 +156,6 @@ struct RouteEditorSheet: View {
                 .padding(.vertical, 10)
                 .background(.regularMaterial)
             }
-            .accessibilityIdentifier("route-editor-screen-\(route.stravaRouteID)")
             .navigationTitle(route.name.trimmed.nilIfEmpty ?? "Route Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

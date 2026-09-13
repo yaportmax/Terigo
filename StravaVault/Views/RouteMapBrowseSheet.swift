@@ -153,8 +153,17 @@ struct RouteMapBrowseSheet: View {
                     onTapMapBackground: deselectMapBrowseSelection,
                     controlsTopInset: 14
                 ) { centerOnUserLocation in
-                    VStack(spacing: 10) {
+                    let controlsLayout = isWide
+                        ? AnyLayout(HStackLayout(spacing: 8))
+                        : AnyLayout(VStackLayout(spacing: 10))
+                    controlsLayout {
                         RouteMapSettingsButton()
+
+                        MapOverlayIconButton(
+                            systemImage: "scope",
+                            accessibilityLabel: "Fit routes on map",
+                            action: fitToResults
+                        )
 
                         MapOverlayIconButton(
                             systemImage: "magnifyingglass",
@@ -648,4 +657,3 @@ struct RouteMapBrowseSheet: View {
         AppRouteMapPerspective(rawValue: appRouteMapPerspectiveRawValue) ?? AppRouteMapPerspective.defaultValue
     }
 }
-
