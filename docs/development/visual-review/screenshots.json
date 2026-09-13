@@ -1,0 +1,452 @@
+[
+  {
+    "file": "testActivityTourDark-dark-12-activities.png",
+    "sha256": "a870f58217d3bb6eb1d53ae86ae24a6027bf169a8cd41b11a81399fc1fe0448c",
+    "contact_sheet": "contact-01.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourDark-dark-13-activity-sort.png",
+    "sha256": "90e4bd7678f890278c89174390a2e2a111270bb01751d549692d76f772509537",
+    "contact_sheet": "contact-01.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourDark-dark-14-activity-filters.png",
+    "sha256": "003af40bbe24d7fd90c4efe288ee73bfa6ba7afc886ec60cf0092aff9b7b69a7",
+    "contact_sheet": "contact-01.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourDark-dark-15-activity-detail.png",
+    "sha256": "685509dfecb497c795095af36b92be3fef32b94703bd592f22583aa6859da2d2",
+    "contact_sheet": "contact-01.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourDark-dark-16-activity-analysis.png",
+    "sha256": "dcdd015b2f530a47554bd6507d404aef84eda0b35f289ea9e0312dceb6cc6351",
+    "contact_sheet": "contact-01.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourDark-dark-17-activity-terrain.png",
+    "sha256": "b35c5f5de99ac6dfbc06dd5451de4a855354c68ce42d1954456667fe2e8f80f6",
+    "contact_sheet": "contact-01.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourDark-dark-18-settings.png",
+    "sha256": "df19c5e0aa84092cf4a9f1b605b7e8c8d1b7fd23477853f89fe06b07a6a52c1f",
+    "contact_sheet": "contact-02.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourDark-dark-19-offline.png",
+    "sha256": "45ea8ac17783e8919f223739d4d684e809fdb661371954317a6782e184a31417",
+    "contact_sheet": "contact-02.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourDark-dark-20-export.png",
+    "sha256": "cef1ca0bd7c973efdc087c7b20f9a976f03c348a5d47aa57056473bf827accec",
+    "contact_sheet": "contact-02.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourDark-dark-21-account.png",
+    "sha256": "db174437878c3b6167b132f282a2a49275be43eb51330173186ddfdceecab24b",
+    "contact_sheet": "contact-02.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourDark-dark-22-feedback.png",
+    "sha256": "45edd570202ba3a6b3962599af1861e141bd16347c37bc2cacfdf31f8bb50bc9",
+    "contact_sheet": "contact-02.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourLight-light-12-activities.png",
+    "sha256": "cf85609a7a935aed2099f7d70fde27d3abf859041edf957ea90ecd4e487127c5",
+    "contact_sheet": "contact-02.jpg",
+    "original": "activities.png"
+  },
+  {
+    "file": "testActivityTourLight-light-13-activity-sort.png",
+    "sha256": "896240f7c65c5822fb9cf966b984c2f30de1b5fff078281c94bb2803bdbb78c4",
+    "contact_sheet": "contact-03.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourLight-light-14-activity-filters.png",
+    "sha256": "503afcea453dfcb7cda2dd7cd1f9b8518c81e1d96fb6af595ec553259e7b33a1",
+    "contact_sheet": "contact-03.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourLight-light-15-activity-detail.png",
+    "sha256": "4fd88ec0e3be2d45222ee26fb3ba25a8c82994d0f6dbb400d4a5078a8231bf96",
+    "contact_sheet": "contact-03.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourLight-light-16-activity-analysis.png",
+    "sha256": "d310ea44d1b7a82286176a45441c0d6d659ed0fb56f64ecc37d385a1de585d0b",
+    "contact_sheet": "contact-03.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourLight-light-17-activity-terrain.png",
+    "sha256": "eeb068c6544104712870b883d48a0462454ff4b94f50ceb108471b4ab2ac9817",
+    "contact_sheet": "contact-03.jpg",
+    "original": "activity-analysis.png"
+  },
+  {
+    "file": "testActivityTourLight-light-18-settings.png",
+    "sha256": "8ef748acc97ffb4f1a047a1ed0f526d750a00b34bc69976feb5f54c764756e12",
+    "contact_sheet": "contact-03.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourLight-light-19-offline.png",
+    "sha256": "e18a16311ee30da272c0539997cc5f9ff27a7ac04b113cfd4baf11d0f1802cf2",
+    "contact_sheet": "contact-04.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourLight-light-20-export.png",
+    "sha256": "5e6391776aa0b2cf700289f9c40f161adc224914e01253f8198b6c78f10121fa",
+    "contact_sheet": "contact-04.jpg",
+    "original": "export.png"
+  },
+  {
+    "file": "testActivityTourLight-light-21-account.png",
+    "sha256": "3a23a88a088b1fdb9fefdf4d95df1d16287ae614a156e3b263040dbc3889f8c1",
+    "contact_sheet": "contact-04.jpg",
+    "original": null
+  },
+  {
+    "file": "testActivityTourLight-light-22-feedback.png",
+    "sha256": "e0051f87e7ba1f67210f52bcc560d2b8793057660f3483a4604a7db53e32c84b",
+    "contact_sheet": "contact-04.jpg",
+    "original": null
+  },
+  {
+    "file": "testCreateListAndCancelDeletion-list-created.png",
+    "sha256": "15a46d7c33c64c3b8bbb586b54c4ddaab2a5ceffde15057e0dabde4da7ded294",
+    "contact_sheet": "contact-04.jpg",
+    "original": null
+  },
+  {
+    "file": "testCreateListAndCancelDeletion-list-delete-confirmation.png",
+    "sha256": "6999f590a8e687782a364fed9d3c37354665e774bbf3df8096c940f5a684cd89",
+    "contact_sheet": "contact-04.jpg",
+    "original": null
+  },
+  {
+    "file": "testCreateListAndCancelDeletion-list-empty-detail.png",
+    "sha256": "be71969fff3105a37939b389169717e510a9d68b95c59939c79e7637df479c15",
+    "contact_sheet": "contact-05.jpg",
+    "original": null
+  },
+  {
+    "file": "testCreateListAndCancelDeletion-list-route-added-from-menu.png",
+    "sha256": "a3da74193013f57b8bf594c1b3f42e2fbae97514e4b12dc4713859a48f823151",
+    "contact_sheet": "contact-05.jpg",
+    "original": null
+  },
+  {
+    "file": "testCreateListAndCancelDeletion-route-actions-menu.png",
+    "sha256": "7db133a922cca95cf452a5d13b2dcc11c70318d4aad79d9fa873a9b3ba6c0a09",
+    "contact_sheet": "contact-05.jpg",
+    "original": null
+  },
+  {
+    "file": "testExploreMapTools-explore-fullscreen.png",
+    "sha256": "3ce8f5389eeb1736d04cae5f2411f2b268340d4110cda7336d4e216a80dd146d",
+    "contact_sheet": "contact-05.jpg",
+    "original": null
+  },
+  {
+    "file": "testExploreMapTools-explore-place-search.png",
+    "sha256": "a836415fee0219c6597621439d2fb708301fa51cdcad9f53b41b292f2757a62c",
+    "contact_sheet": "contact-05.jpg",
+    "original": null
+  },
+  {
+    "file": "testLargeTextAndLandscape-accessibility-activities.png",
+    "sha256": "a2229b63c1301aa0eb3af309e4370b09be8e4e36f6c5176d2b5c56051925546f",
+    "contact_sheet": "contact-05.jpg",
+    "original": null
+  },
+  {
+    "file": "testLargeTextAndLandscape-accessibility-detail.png",
+    "sha256": "2dd9a0e116e80e7daccdbae3f5f43847526c899b7f3575c8abeeec2324f7d2e8",
+    "contact_sheet": "contact-06.jpg",
+    "original": "large-text.png"
+  },
+  {
+    "file": "testLargeTextAndLandscape-accessibility-library.png",
+    "sha256": "1b98b919d9c5383716d9700cde5df6a0fc597898cf0779ec68c49dae967417be",
+    "contact_sheet": "contact-06.jpg",
+    "original": null
+  },
+  {
+    "file": "testLargeTextAndLandscape-landscape-explore.png",
+    "sha256": "df76367ba019b766fac31ea88f805b08b15b6d4b0261263962fd10802846c390",
+    "contact_sheet": "contact-06.jpg",
+    "original": "landscape.png"
+  },
+  {
+    "file": "testLargeTextAndLandscape-landscape-library.png",
+    "sha256": "b795cf2534d2930cce24af505e28272cf0cb4b3da55d3c450ec7cbaba0ba8b79",
+    "contact_sheet": "contact-06.jpg",
+    "original": null
+  },
+  {
+    "file": "testLibraryOpenFailureCanRetry-library-storage-recovery.png",
+    "sha256": "9f86a06b3f732bfea499f8cddb3c6e52b38446926c3ee2985c7c4e92b81e4836",
+    "contact_sheet": "contact-06.jpg",
+    "original": null
+  },
+  {
+    "file": "testOfflineGPXDownload-offline-options.png",
+    "sha256": "3eee6ac11a8b8984d3e97f61cf07276b2011a4a5005f28be2df23b54007edb93",
+    "contact_sheet": "contact-06.jpg",
+    "original": "offline.png"
+  },
+  {
+    "file": "testOfflineGPXDownload-offline-saved.png",
+    "sha256": "1c05561787ba0b4a2993a2c3bdffb9dad9e322f3a03abcc6cc3ce136966f9785",
+    "contact_sheet": "contact-07.jpg",
+    "original": null
+  },
+  {
+    "file": "testRouteDeletedFromListCanBeRestoredForSync-deleted-route-recovery.png",
+    "sha256": "a462e1c9ca888b4710baf580316685fbd097b4201048f13244b7ec806b4c8203",
+    "contact_sheet": "contact-07.jpg",
+    "original": null
+  },
+  {
+    "file": "testRouteDeletedFromListCanBeRestoredForSync-route-delete-confirmation.png",
+    "sha256": "0942ed5b5548f525f2bcb2f3cd53a5809023290027cb6fdb3044ed8acea73e38",
+    "contact_sheet": "contact-07.jpg",
+    "original": null
+  },
+  {
+    "file": "testRouteMapSharingAndListDeletion-list-collaboration.png",
+    "sha256": "39f2cb6d449439802395945be1fb4729a3db9b5b8f4606141c7bf422204ec28d",
+    "contact_sheet": "contact-07.jpg",
+    "original": null
+  },
+  {
+    "file": "testRouteMapSharingAndListDeletion-list-sharing.png",
+    "sha256": "f2924d9c799e1b9e710245eb947fd53632c0bb5110ad921e9664adbfe4f2f467",
+    "contact_sheet": "contact-07.jpg",
+    "original": "sharing.png"
+  },
+  {
+    "file": "testRouteMapSharingAndListDeletion-route-fullscreen-map.png",
+    "sha256": "e7495f14f2647019d029862ee58d18ff9e7816f6ac139f0d897b6c6db879e7c6",
+    "contact_sheet": "contact-07.jpg",
+    "original": "full-screen-map.png"
+  },
+  {
+    "file": "testRouteMapSharingAndListDeletion-route-preserved-after-list-deletion.png",
+    "sha256": "8f2b79a23d446307199827a0beb4f9aed331bdb8b1e1dfdb2373f79896ecfcab",
+    "contact_sheet": "contact-08.jpg",
+    "original": null
+  },
+  {
+    "file": "testSearchAndNavigationPreserveLibrary-search-empty.png",
+    "sha256": "5965490eb5328c6c9ca1cd5913b0628e7f8515b70ccbfcdc5e9e2b0d17150eb7",
+    "contact_sheet": "contact-08.jpg",
+    "original": null
+  },
+  {
+    "file": "testSearchAndNavigationPreserveLibrary-search-filtered.png",
+    "sha256": "092e1005bb42f647623d6381e31337f720b978c0de3973f1d38d8886e875c5ae",
+    "contact_sheet": "contact-08.jpg",
+    "original": null
+  },
+  {
+    "file": "testTrackingAndMapTools-tracking-continuous-gps.png",
+    "sha256": "559711cf9e6c5253e32153401ffdaf9314ee2026ec45fc029208e776c2770fdb",
+    "contact_sheet": "contact-08.jpg",
+    "original": null
+  },
+  {
+    "file": "testTrackingAndMapTools-tracking-end-confirmation.png",
+    "sha256": "3f4f390f9004fcb1b4fc9c61551171fbf7aec3718fd3ba3cf469fc241b947a6a",
+    "contact_sheet": "contact-08.jpg",
+    "original": null
+  },
+  {
+    "file": "testTrackingAndMapTools-tracking-finished.png",
+    "sha256": "72bc4101c2a8d702d2bfe4f48a32c451bb9606de69225d93e52f668f9e5b119b",
+    "contact_sheet": "contact-08.jpg",
+    "original": "tracking-finished.png"
+  },
+  {
+    "file": "testTrackingAndMapTools-tracking-live.png",
+    "sha256": "eb21d0613d53ea72568316f38c60ba2f194967e9b381d66541059edc706dcd1b",
+    "contact_sheet": "contact-09.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourDark-dark-01-routes.png",
+    "sha256": "c24e70d1babf18b619421a6722d40225ee1fa48ca4f31ef8aed653d0c7c28a64",
+    "contact_sheet": "contact-09.jpg",
+    "original": "routes-dark.png"
+  },
+  {
+    "file": "testVisualTourDark-dark-02-sort.png",
+    "sha256": "d8d01b2d5d03379077293a21cd578b6f39553700193ccd484b6256deae4a9bae",
+    "contact_sheet": "contact-09.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourDark-dark-03-filters.png",
+    "sha256": "7df73a6bb9d7a89a4f99379613f71db56500102dc13278a15cf4d0c6cfba6e03",
+    "contact_sheet": "contact-09.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourDark-dark-04-filter-areas-lists.png",
+    "sha256": "713674bc2c56a63c9923f36f8d6c568e214229b97005b138e25acee6c062c017",
+    "contact_sheet": "contact-09.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourDark-dark-05-route-overview.png",
+    "sha256": "78d145f79a66813c4b99424373437e5a8967b822e0d5f6f513d60ffdf829b0f7",
+    "contact_sheet": "contact-09.jpg",
+    "original": "route-details.png"
+  },
+  {
+    "file": "testVisualTourDark-dark-06-route-weather.png",
+    "sha256": "1843eb2f55123c2b8a3ae67e5f3a8028f13ed828478c08b0796099696238f733",
+    "contact_sheet": "contact-10.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourDark-dark-07-route-organization.png",
+    "sha256": "f65b6bf8d513cbc368cd2370334a7a223e22f63933b9cbf331d18680080f3e3d",
+    "contact_sheet": "contact-10.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourDark-dark-08-route-tools.png",
+    "sha256": "a1c70fe73c0d0f82a90a8fcb074571c99911793af684aca5eb6eb4fa1db4c1aa",
+    "contact_sheet": "contact-10.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourDark-dark-09-explore.png",
+    "sha256": "324ab991c384c0a7c62c389dd3c65f73025612f490bc709d60153d41066037df",
+    "contact_sheet": "contact-10.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourDark-dark-10-lists.png",
+    "sha256": "0797b2e7f27dd2748855a04a250d0cbd858ddb8ca3114a2339a60730bbea6d29",
+    "contact_sheet": "contact-10.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourDark-dark-11-list-detail.png",
+    "sha256": "a0811ddf18eba7205dc3b43925ad30b3817fd6dcbb71141390666a87f61dcbb4",
+    "contact_sheet": "contact-10.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourLight-light-01-routes.png",
+    "sha256": "60a2ca1c9e052a19a105dd70f373dc034a2385d596fa8204c2a434dff2b9d202",
+    "contact_sheet": "contact-11.jpg",
+    "original": "routes-light.png"
+  },
+  {
+    "file": "testVisualTourLight-light-02-sort.png",
+    "sha256": "25f1a16140c2c0d48ef59d26380b456bdb7f20f8e0dfd084c3f91a32990dc37d",
+    "contact_sheet": "contact-11.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourLight-light-03-filters.png",
+    "sha256": "474c819385c64aa4740b77ddb478bb34448ab7ee77a2d8f33ef5d4fee526fdb0",
+    "contact_sheet": "contact-11.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourLight-light-04-filter-areas-lists.png",
+    "sha256": "1c258b6c4c3b53fac6cbaac2262ce9b74e51ea151377bf12cb501412660a186b",
+    "contact_sheet": "contact-11.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourLight-light-05-route-overview.png",
+    "sha256": "526f3b5c3726acefb2046b950d2f22f37bb8ecb16b5023c0759c9dc86512b14e",
+    "contact_sheet": "contact-11.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourLight-light-06-route-weather.png",
+    "sha256": "8d48373dd86b49fde307ebea54dda70f8343f932305a00ac70fabeb767d4d448",
+    "contact_sheet": "contact-11.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourLight-light-07-route-organization.png",
+    "sha256": "0fe8c69843a162af481d6d6a25cb717633b30ae6be88908f929448dfd9244f20",
+    "contact_sheet": "contact-12.jpg",
+    "original": "route-organization.png"
+  },
+  {
+    "file": "testVisualTourLight-light-08-route-tools.png",
+    "sha256": "cc49b88da328e44c025ccbb4b2781f4b6491c447a3f2babfc9a8022036d9c941",
+    "contact_sheet": "contact-12.jpg",
+    "original": null
+  },
+  {
+    "file": "testVisualTourLight-light-09-explore.png",
+    "sha256": "a1d096856c86b838cf4b4bdd4af5fd398d8e3324034ed483ba6a106429960af9",
+    "contact_sheet": "contact-12.jpg",
+    "original": "explore.png"
+  },
+  {
+    "file": "testVisualTourLight-light-10-lists.png",
+    "sha256": "b4bc72ff05d5125d71307cfb8b5e8fb6d21dd6505db14c5d7c083d4e890e6b6e",
+    "contact_sheet": "contact-12.jpg",
+    "original": "lists.png"
+  },
+  {
+    "file": "testVisualTourLight-light-11-list-detail.png",
+    "sha256": "14e7d2f4101f5006287324c1682bab779af1c82d8fc77c782d77bc9af052c362",
+    "contact_sheet": "contact-12.jpg",
+    "original": null
+  },
+  {
+    "file": "testWelcomeAndLocalLibrary-local-activity-import.png",
+    "sha256": "15fff9715b31c15f745247a77020ff3c6a32b5d1f6d434e56c0ec5dfbe064bf5",
+    "contact_sheet": "contact-12.jpg",
+    "original": null
+  },
+  {
+    "file": "testWelcomeAndLocalLibrary-local-empty-library.png",
+    "sha256": "5fa79ab052b1dc36657c1bc8c0166ce449852671896fdc4966d2639d7e268ea6",
+    "contact_sheet": "contact-13.jpg",
+    "original": null
+  },
+  {
+    "file": "testWelcomeAndLocalLibrary-welcome-connection-unavailable.png",
+    "sha256": "e44317b24472e4d3b94ce493523cc6aef94578b8db60ab33ca19e4ae4761b74c",
+    "contact_sheet": "contact-13.jpg",
+    "original": null
+  },
+  {
+    "file": "testWelcomeAndLocalLibrary-welcome.png",
+    "sha256": "a01fcb6fde299ed20f1bb042cdc6511d0029041d3e1e03b3acb554bcb210cfe9",
+    "contact_sheet": "contact-13.jpg",
+    "original": "welcome.png"
+  }
+]

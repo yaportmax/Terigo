@@ -1,0 +1,11 @@
+{
+  "source_sha": "a3269730c76d7ed6d017fa51b72ae731af786a78",
+  "head_sha": "e73411894918e458264587f79779e855317a8981",
+  "base_sha": "625da80ef820b0a520ac3e27d984194b1eb302d8",
+  "xcode": "Xcode 26.6\nBuild version 17F113",
+  "device": "iPhone 17 Pro",
+  "phase": "test",
+  "passed": true,
+  "signed": false,
+  "data": "synthetic UI test fixtures"
+}
