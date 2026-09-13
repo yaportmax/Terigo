@@ -117,6 +117,9 @@ final class StravaVaultCleanUITests: XCTestCase {
         tap(app.buttons["route-fullscreen-recenter"])
         RunLoop.current.run(until: Date().addingTimeInterval(3))
         capture("route-fullscreen-map", app)
+        XCTAssertTrue(waitUntil {
+            app.links.matching(identifier: "Legal").allElementsBoundByIndex.contains { $0.isHittable }
+        }, "Map attribution must remain reachable above the elevation panel")
         tap(app.buttons["Close full screen map"])
         tap(app.buttons["Done"])
         tapTab("Lists", app)

@@ -2685,7 +2685,8 @@ private struct RouteFullScreenMapView: View {
                     activeElevationDistanceMeters = distanceMeters
                 }
             )
-            .ignoresSafeArea()
+            // Keep MapKit's bottom safe area so its attribution stays above the chart.
+            .ignoresSafeArea(.container, edges: RouteVaultMapboxConfiguration.isConfigured ? .all : .top)
 
             VStack(alignment: .leading, spacing: 10) {
                 VStack(alignment: .leading, spacing: 10) {
@@ -2747,9 +2748,9 @@ private struct RouteFullScreenMapView: View {
             .padding(.top, 28)
             .padding(.bottom, 24)
 
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack {
-                Spacer()
-
                 if !isShowingElevationChart {
                     HStack {
                         Spacer(minLength: 0)
@@ -2796,7 +2797,7 @@ private struct RouteFullScreenMapView: View {
             .padding(.top, 16)
             .padding(.bottom, 24)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(TerigoTheme.background.ignoresSafeArea())
         .onChange(of: isShowingElevationChart) { _, isShowing in
             if !isShowing {
                 bottomOverlayHeight = 0
@@ -2878,7 +2879,11 @@ struct RouteMapPreview: View {
                     if !markers.contains(where: { $0.id == marker.id }) { markers.append(marker) }
                 },
                 fitRequest: fitTrigger,
-                fitInsets: routeFitInsets,
+                // The full-screen container reserves chart space with safeAreaInset.
+                // MapKit uses that area to position both its camera and attribution.
+                fitInsets: displayMode == .fullScreen
+                    ? RouteMapFitInsets(top: routeFitInsets.top, bottom: 18)
+                    : routeFitInsets,
                 onTapCoordinate: { coordinate in
                     guard let onRouteDistanceSelection,
                           let sample = route.elevationProfile.min(by: {
