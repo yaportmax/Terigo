@@ -106,45 +106,37 @@ struct ConnectionSection: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
+        Button {
+            Task { await model.connect() }
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "link")
+                    .font(.title2)
+                    .foregroundStyle(TerigoTheme.accent)
+                VStack(alignment: .leading, spacing: 4) {
                     Text(isReconnectState ? "Reconnect Strava" : "Connect Strava")
-                        .font(.system(.title3, design: .rounded, weight: .bold))
-
-                    Text(
-                        isReconnectState
-                            ? "Reconnect to refresh your saved Strava routes."
-                            : "Bring your saved routes into Terigo, or keep exploring with GPX files."
-                    )
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Text(isReconnectState ? "Refresh your saved routes." : "Sync your saved routes with this library.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-
                 Spacer(minLength: 0)
-
-                Image(systemName: "link.circle.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(Color(red: 0.85, green: 0.36, blue: 0.18))
-            }
-
-            VStack(alignment: .leading, spacing: 12) {
-                Button {
-                    Task { await model.connect() }
-                } label: {
-                    if model.isConnecting {
-                        ProgressView()
-                    } else {
-                        Text(isReconnectState ? "Reconnect Strava" : "Connect Strava")
-                    }
+                if model.isConnecting {
+                    ProgressView()
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(TerigoTheme.accent)
-                .disabled(model.isConnecting)
             }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .routePanelSurface(cornerRadius: 22)
         }
-        .padding(20)
-        .routePanelSurface(cornerRadius: 30)
+        .buttonStyle(.plain)
+        .disabled(model.isConnecting)
     }
 }
 

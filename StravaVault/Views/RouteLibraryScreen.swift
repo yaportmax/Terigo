@@ -262,16 +262,18 @@ struct RouteLibraryScreen: View {
                     }
                 }
 
-                if !model.isConnected {
+                if !model.isConnected && !routes.isEmpty {
                     ConnectionSection(model: model)
                 }
 
-                ControlsSection(
-                    model: model,
-                    allRoutes: routes,
-                    lists: sortedRouteLists
-                )
-                .id("controls-\(appMeasurementSystemRawValue)")
+                if !routes.isEmpty {
+                    ControlsSection(
+                        model: model,
+                        allRoutes: routes,
+                        lists: sortedRouteLists
+                    )
+                    .id("controls-\(appMeasurementSystemRawValue)")
+                }
 
                 RouteResultsSection(
                     filteredRoutes: filteredRoutes,
@@ -303,6 +305,10 @@ struct RouteLibraryScreen: View {
                     model.selectedRoute = route
                 }
                 .id("results-\(appMeasurementSystemRawValue)-\(routeListDensityRawValue)")
+
+                if !model.isConnected && routes.isEmpty {
+                    ConnectionSection(model: model)
+                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
@@ -422,7 +428,7 @@ struct RouteLibraryScreen: View {
         if !encounteredConflict {
             await hydrateRemoteListsIfPossible()
         }
-        try? modelContext.save()
+        saveLibraryChanges()
     }
 
     private var routeLibrarySettingsMenu: some View {
@@ -754,31 +760,55 @@ struct RouteLibraryScreen: View {
         }
     }
 
-    private func deleteListEverywhere(_ list: RouteList) {
+    private func deleteListEverywhere(_ list: RouteList) -> Bool {
         let listToken = list.name.routeLabelIdentifier
         guard !listToken.isEmpty else {
-            return
+            return false
         }
 
-        if list.remoteAccessRole == .follower,
-           let shareToken = list.remoteShareToken?.trimmed.nilIfEmpty,
-           let accountSession = accountManager.accountSession {
+        // Commit earlier edits first so rollback only restores this deletion.
+        guard saveLibraryChanges() else { return false }
+        let listName = list.name
+        let followedShareToken = list.remoteAccessRole == .follower ? list.remoteShareToken?.trimmed.nilIfEmpty : nil
+
+        for route in routes where route.hasList(named: listName) {
+            route.listNames = route.removingList(named: listName)
+        }
+        modelContext.delete(list)
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            model.errorMessage = "Couldn’t delete the list. \(error.localizedDescription)"
+            return false
+        }
+
+        model.removeSelectedTag(listName)
+        if let shareToken = followedShareToken, let accountSession = accountManager.accountSession {
             Task {
-                try? await RouteVaultBackendService().setFollowState(
-                    shareToken: shareToken,
-                    isFollowing: false,
-                    accountSessionToken: accountSession.token
-                )
+                do {
+                    try await RouteVaultBackendService().setFollowState(
+                        shareToken: shareToken,
+                        isFollowing: false,
+                        accountSessionToken: accountSession.token
+                    )
+                } catch {
+                    accountManager.errorMessage = "The list was removed locally, but unfollowing failed. \(error.localizedDescription)"
+                }
             }
         }
+        return true
+    }
 
-        for route in routes where route.hasList(named: list.name) {
-            route.listNames = route.removingList(named: list.name)
+    @discardableResult
+    private func saveLibraryChanges() -> Bool {
+        do {
+            try modelContext.save()
+            return true
+        } catch {
+            model.errorMessage = "Couldn’t save library changes. \(error.localizedDescription)"
+            return false
         }
-
-        model.removeSelectedTag(list.name)
-        modelContext.delete(list)
-        try? modelContext.save()
     }
 
     @MainActor
@@ -796,7 +826,7 @@ struct RouteLibraryScreen: View {
             mergeRemoteList(remoteList)
         }
 
-        try? modelContext.save()
+        saveLibraryChanges()
     }
 
     @MainActor

@@ -109,6 +109,7 @@ private struct RouteLibraryResultRow: View {
     private let offlineAssetService = RouteOfflineAssetService()
     private let offlineDownloadCoordinator = RouteOfflineDownloadCoordinator()
     @State private var isShowingCreateListSheet = false
+    @State private var isShowingDeleteConfirmation = false
     @State private var isDownloadingOffline = false
 
     private var offlineStatus: RouteOfflineAssetStatus {
@@ -133,6 +134,12 @@ private struct RouteLibraryResultRow: View {
                     .presentationDetents([.medium])
                 }
             }
+        .alert("Delete Route?", isPresented: $isShowingDeleteConfirmation) {
+            Button("Delete Route", role: .destructive) { onDeleteRoute(route) }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This removes the route and its saved offline files from your library.")
+        }
     }
 
     private var leadingSwipeActions: [SwipeRevealAction] {
@@ -185,7 +192,7 @@ private struct RouteLibraryResultRow: View {
                 systemImage: "trash",
                 tint: .red
             ) {
-                onDeleteRoute(route)
+                isShowingDeleteConfirmation = true
             }
         ]
     }
@@ -256,7 +263,7 @@ private struct RouteLibraryResultRow: View {
         }
 
         Button(role: .destructive) {
-            onDeleteRoute(route)
+            isShowingDeleteConfirmation = true
         } label: {
             Label("Delete", systemImage: "trash")
         }
@@ -274,16 +281,24 @@ private struct RouteLibraryResultRow: View {
         }
 
         if let existingList = allLists.first(where: { $0.normalizedName == trimmedListName.routeLabelIdentifier }) {
-            toggleList(existingList)
-            onReportStatus("Added \(route.name) to \(existingList.name).")
+            if !route.hasList(named: existingList.name) {
+                toggleList(existingList)
+            }
             return
         }
 
+        let previousListNames = route.listNames
         let newList = RouteList(name: trimmedListName)
         modelContext.insert(newList)
-        onToggleRouteList(route, newList)
-        try? modelContext.save()
-        onReportStatus("Created \(newList.name) and added \(route.name).")
+        route.listNames = route.toggledListNames(with: newList.name)
+        do {
+            try modelContext.save()
+            onReportStatus("Created \(newList.name) and added \(route.name).")
+        } catch {
+            route.listNames = previousListNames
+            modelContext.delete(newList)
+            onReportError("Couldn’t create the list. \(error.localizedDescription)")
+        }
     }
 
     private func openStartInMaps() {
@@ -310,7 +325,7 @@ private struct RouteLibraryResultRow: View {
             route.offlineGPXRelativePath = storedAssets.gpxRelativePath
             route.offlineMapSnapshotRelativePath = storedAssets.mapSnapshotRelativePath
             route.offlineDownloadedAt = storedAssets.downloadedAt
-            try? modelContext.save()
+            try modelContext.save()
             onReportStatus("Saved offline files for \(route.name).")
         } catch {
             onReportError(error.localizedDescription)
@@ -327,7 +342,7 @@ private struct RouteLibraryResultRow: View {
             route.offlineGPXRelativePath = nil
             route.offlineMapSnapshotRelativePath = nil
             route.offlineDownloadedAt = nil
-            try? modelContext.save()
+            try modelContext.save()
             onReportStatus("Removed offline files for \(route.name).")
         } catch {
             onReportError(error.localizedDescription)
@@ -346,8 +361,6 @@ private struct SwipeRevealAction: Identifiable {
 }
 
 private struct SwipeRevealRow<Content: View>: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     let leadingActions: [SwipeRevealAction]
     let trailingActions: [SwipeRevealAction]
     @ViewBuilder let content: () -> Content

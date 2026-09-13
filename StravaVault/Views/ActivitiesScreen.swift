@@ -272,6 +272,7 @@ private struct ActivitiesSettingsSheet: View {
                     }
                 }
                 .pickerStyle(.inline)
+                .labelsHidden()
             }
 
             Section("Actions") {

@@ -1126,6 +1126,14 @@ enum RouteListVisibilityMode: String, CaseIterable, Codable {
     case invitedView = "invited_viewers"
     case linkView = "link_view"
 
+    var shortTitle: String {
+        switch self {
+        case .privateAccess: "Private"
+        case .invitedView: "Invite only"
+        case .linkView: "Shared by link"
+        }
+    }
+
     var title: String {
         switch self {
         case .privateAccess:

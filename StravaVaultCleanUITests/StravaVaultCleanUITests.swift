@@ -4,15 +4,12 @@ import XCTest
 @MainActor
 final class StravaVaultCleanUITests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
-    override func tearDownWithError() throws {
-        if let testRun, testRun.failureCount > 0 { capture("failure-\(name)", XCUIApplication()) }
-        XCUIDevice.shared.orientation = .portrait
-    }
 
     func testVisualTourLight() throws { try visualTour(appearance: "light") }
     func testVisualTourDark() throws { try visualTour(appearance: "dark") }
 
     func testLibraryOpenFailureCanRetry() throws {
+        XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ui-testing-seed-demo", "--ui-test-storage-failure"]
         app.launch()
@@ -91,6 +88,33 @@ final class StravaVaultCleanUITests: XCTestCase {
         tap(app.buttons["Close"])
         tap(app.buttons["Search for a place"])
         capture("explore-place-search", app)
+    }
+
+    func testRouteMapSharingAndListDeletion() throws {
+        let app = launch()
+        openRoute(app)
+        tap(app.buttons["Open full screen map"])
+        capture("route-fullscreen-map", app)
+        tap(app.buttons["Recenter route"])
+        tap(app.buttons["Close full screen map"])
+        tap(app.buttons["Done"])
+        tapTab("Lists", app)
+        tap(app.buttons["route-list-row-training-block"])
+        tap(app.buttons["route-list-settings-button"])
+        tap(app.buttons["Sharing & Collaboration"])
+        capture("list-sharing", app)
+        app.swipeUp()
+        capture("list-collaboration", app)
+        tap(app.buttons["Close"])
+        tap(app.buttons["route-list-settings-button"])
+        tap(app.buttons["Delete List"])
+        tap(app.alerts.buttons["Delete List"])
+        XCTAssertTrue(app.buttons["route-list-row-weekend-hits"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["route-list-row-training-block"].exists)
+        tapTab("Routes", app)
+        XCTAssertTrue(app.buttons["route-row-4002"].waitForExistence(timeout: 8))
+        openRoute(app)
+        capture("route-preserved-after-list-deletion", app)
     }
 
     func testOfflineGPXDownload() throws {
@@ -225,6 +249,7 @@ final class StravaVaultCleanUITests: XCTestCase {
     }
 
     private func launch(appearance: String = "light", seed: Bool = true, extra: [String] = []) -> XCUIApplication {
+        XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ui-testing-disable-animations", "--ui-appearance=\(appearance)"] + extra
         if seed { app.launchArguments.append("--ui-testing-seed-demo") }
@@ -239,12 +264,16 @@ final class StravaVaultCleanUITests: XCTestCase {
             app.swipeUp()
         }
         tap(route)
-        XCTAssertTrue(app.buttons["route-editor-start-activity"].waitForExistence(timeout: 10))
+        let opened = app.buttons["route-editor-start-activity"].waitForExistence(timeout: 10)
+        if !opened { capture("failure-opening-route", app) }
+        XCTAssertTrue(opened)
     }
     private func openSettings(_ app: XCUIApplication) { tap(app.buttons["route-library-settings-button"]) }
     private func tapTab(_ title: String, _ app: XCUIApplication) { tap(app.tabBars.buttons[title]) }
     private func tap(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertTrue(element.waitForExistence(timeout: 10), file: file, line: line)
+        let exists = element.waitForExistence(timeout: 10)
+        if !exists { capture("failure-missing-control", XCUIApplication()) }
+        XCTAssertTrue(exists, file: file, line: line)
         element.tap()
     }
     private func capture(_ name: String, _ app: XCUIApplication) {

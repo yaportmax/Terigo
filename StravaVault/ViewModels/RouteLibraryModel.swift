@@ -521,6 +521,12 @@ final class RouteLibraryModel {
 
     @discardableResult
     func deleteRoute(_ route: RouteRecord, using context: ModelContext, showsStatusMessage: Bool = true) -> Bool {
+        do {
+            try context.save()
+        } catch {
+            errorMessage = displayMessage(for: error)
+            return false
+        }
         let routeID = route.stravaRouteID
         let routeName = route.name.trimmed.nilIfEmpty ?? "Route \(routeID)"
         let shouldBlockStravaResync = !route.isImportedFromGPX
@@ -550,6 +556,7 @@ final class RouteLibraryModel {
             }
             return true
         } catch {
+            context.rollback()
             errorMessage = displayMessage(for: error)
             return false
         }

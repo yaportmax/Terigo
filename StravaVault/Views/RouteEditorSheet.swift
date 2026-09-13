@@ -1654,7 +1654,7 @@ private struct RouteDetailMapCard: View {
                     } label: {
                         Image(systemName: "scope")
                             .font(.headline.weight(.bold))
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                             .background(.ultraThinMaterial, in: Circle())
                     }
                     .buttonStyle(.plain)
@@ -1663,7 +1663,7 @@ private struct RouteDetailMapCard: View {
                     Button(action: onToggleElevationChart) {
                         Image(systemName: isShowingElevationChart ? "eye.slash" : "eye")
                             .font(.headline.weight(.bold))
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                             .background(.ultraThinMaterial, in: Circle())
                     }
                     .buttonStyle(.plain)
@@ -1672,7 +1672,7 @@ private struct RouteDetailMapCard: View {
                     Button(action: onOpenFullScreen) {
                         Image(systemName: "arrow.up.left.and.arrow.down.right")
                             .font(.headline.weight(.bold))
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                             .background(.ultraThinMaterial, in: Circle())
                     }
                     .buttonStyle(.plain)
@@ -2680,10 +2680,11 @@ private struct RouteFullScreenMapView: View {
                         } label: {
                             Image(systemName: "xmark")
                                 .font(.headline.weight(.bold))
-                                .frame(width: 40, height: 40)
+                                .frame(width: 44, height: 44)
                                 .background(.ultraThinMaterial, in: Circle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Close full screen map")
 
                         RouteMapSettingsButton()
 
@@ -2692,7 +2693,7 @@ private struct RouteFullScreenMapView: View {
                         } label: {
                             Image(systemName: "scope")
                                 .font(.headline.weight(.bold))
-                                .frame(width: 40, height: 40)
+                                .frame(width: 44, height: 44)
                                 .background(.ultraThinMaterial, in: Circle())
                         }
                         .buttonStyle(.plain)
@@ -2739,7 +2740,7 @@ private struct RouteFullScreenMapView: View {
                         Button(action: onToggleElevationChart) {
                             Image(systemName: "eye")
                                 .font(.headline.weight(.bold))
-                                .frame(width: 40, height: 40)
+                                .frame(width: 44, height: 44)
                                 .background(.ultraThinMaterial, in: Circle())
                         }
                         .buttonStyle(.plain)

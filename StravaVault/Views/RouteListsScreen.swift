@@ -51,7 +51,7 @@ struct RouteListsScreen: View {
     @Query(sort: [SortDescriptor(\RouteList.updatedAt, order: .reverse)]) private var allLists: [RouteList]
     @Query(sort: [SortDescriptor(\RouteRecord.syncedAt, order: .reverse)]) private var allRoutes: [RouteRecord]
 
-    let onDeleteList: (RouteList) -> Void
+    let onDeleteList: (RouteList) -> Bool
 
     @State private var isShowingNewList = false
     @State private var newListDraft = ""
@@ -89,12 +89,10 @@ struct RouteListsScreen: View {
                                     Text(list.name)
                                         .font(.headline)
 
-                                    HStack(spacing: 8) {
-                                        Text(usageLabel(for: list, usageCounts: usageCounts))
-                                        Text(list.sharingVisibility.title)
-                                    }
+                                    Text("\(usageLabel(for: list, usageCounts: usageCounts)) · \(list.sharingVisibility.shortTitle)")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
                                 }
 
                                 Spacer(minLength: 0)
@@ -201,7 +199,7 @@ struct RouteListsScreen: View {
     }
 
     private func deleteList(_ list: RouteList) {
-        onDeleteList(list)
+        message = onDeleteList(list) ? nil : "Couldn’t delete the list. Please try again."
         pendingDeletionList = nil
     }
 
@@ -222,7 +220,7 @@ private struct RouteListDetailScreen: View {
     @Query(sort: [SortDescriptor(\RouteList.updatedAt, order: .reverse)]) private var allLists: [RouteList]
 
     @Bindable var list: RouteList
-    let onDeleteList: (RouteList) -> Void
+    let onDeleteList: (RouteList) -> Bool
 
     @State private var libraryModel = RouteLibraryModel()
     @State private var selectedRoute: RouteRecord?
@@ -240,7 +238,7 @@ private struct RouteListDetailScreen: View {
 
     private let offlineDownloadCoordinator = RouteOfflineDownloadCoordinator()
 
-    init(list: RouteList, onDeleteList: @escaping (RouteList) -> Void) {
+    init(list: RouteList, onDeleteList: @escaping (RouteList) -> Bool) {
         self.list = list
         self.onDeleteList = onDeleteList
         _renameDraft = State(initialValue: list.name)
@@ -376,8 +374,11 @@ private struct RouteListDetailScreen: View {
             isPresented: $isShowingDeleteConfirmation
         ) {
             Button("Delete List", role: .destructive) {
-                onDeleteList(list)
-                dismiss()
+                if onDeleteList(list) {
+                    dismiss()
+                } else {
+                    errorMessage = "Couldn’t delete the list. Please try again."
+                }
             }
 
             Button("Cancel", role: .cancel) { }

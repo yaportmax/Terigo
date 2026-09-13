@@ -2,9 +2,11 @@ name: iOS simulator validation
 
 on:
   push:
-    branches: [main, 'astra/**']
+    branches: [main]
+    paths-ignore: ['docs/**', '**/*.md']
   pull_request:
     branches: [main]
+    paths-ignore: ['docs/**', '**/*.md']
   workflow_dispatch:
 
 permissions:
@@ -42,7 +44,7 @@ jobs:
             xcrun xcresulttool get test-results summary --path build/Terigo.xcresult > build/test-summary.json
           fi
       - name: Save simulator build cache
-        if: always() && steps.build.outcome == 'success'
+        if: always()
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: build/DerivedData

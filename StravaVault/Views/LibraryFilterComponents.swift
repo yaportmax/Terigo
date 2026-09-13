@@ -80,6 +80,7 @@ struct SortPriorityPanel: View {
 }
 
 private struct SortCriterionRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let index: Int
     let criterion: RouteSortCriterion
     let availableOptions: [RouteSortOption]
@@ -96,7 +97,10 @@ private struct SortCriterionRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: isCondensed ? 4 : 6) {
-            HStack(spacing: isCondensed ? 6 : 8) {
+            let layout = dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+                : AnyLayout(HStackLayout(spacing: isCondensed ? 6 : 8))
+            layout {
                 Text("#\(index + 1)")
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(.secondary)
@@ -119,7 +123,7 @@ private struct SortCriterionRow: View {
                         Text(criterion.option.title)
                             .font(isCondensed ? .footnote.weight(.semibold) : .subheadline.weight(.semibold))
                             .foregroundStyle(.primary)
-                            .lineLimit(1)
+                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
 
                         Spacer(minLength: 0)
 
@@ -139,7 +143,7 @@ private struct SortCriterionRow: View {
                             .font(.caption.weight(.bold))
                         Text(criterion.option.directionTitle(for: criterion.direction))
                             .font(isCondensed ? .caption2.weight(.semibold) : .caption.weight(.semibold))
-                            .lineLimit(1)
+                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                     }
                     .padding(.horizontal, isCondensed ? 8 : 10)
                     .padding(.vertical, isCondensed ? 8 : 10)
@@ -148,39 +152,41 @@ private struct SortCriterionRow: View {
                 .buttonStyle(.plain)
             }
 
-            HStack(spacing: isCondensed ? 8 : 10) {
-                Spacer(minLength: 32)
+            if canMoveUp || canMoveDown || canRemove || criterion.option == .startProximity {
+                HStack(spacing: isCondensed ? 8 : 10) {
+                    Spacer(minLength: 32)
 
-                SortRowAccessoryButton(
-                    symbolName: "arrow.up",
-                    isEnabled: canMoveUp,
-                    action: onMoveUp,
-                    isCondensed: isCondensed
-                )
-
-                SortRowAccessoryButton(
-                    symbolName: "arrow.down",
-                    isEnabled: canMoveDown,
-                    action: onMoveDown,
-                    isCondensed: isCondensed
-                )
-
-                if canRemove {
                     SortRowAccessoryButton(
-                        symbolName: "minus.circle",
-                        isEnabled: true,
-                        action: onRemove,
+                        symbolName: "arrow.up",
+                        isEnabled: canMoveUp,
+                        action: onMoveUp,
                         isCondensed: isCondensed
                     )
-                }
 
-                if criterion.option == .startProximity {
-                    Text(hasSelectedStartLocation ? "Using start reference" : "Needs start reference")
-                        .font(isCondensed ? .caption2 : .caption)
-                        .foregroundStyle(.secondary)
-                }
+                    SortRowAccessoryButton(
+                        symbolName: "arrow.down",
+                        isEnabled: canMoveDown,
+                        action: onMoveDown,
+                        isCondensed: isCondensed
+                    )
 
-                Spacer(minLength: 0)
+                    if canRemove {
+                        SortRowAccessoryButton(
+                            symbolName: "minus.circle",
+                            isEnabled: true,
+                            action: onRemove,
+                            isCondensed: isCondensed
+                        )
+                    }
+
+                    if criterion.option == .startProximity {
+                        Text(hasSelectedStartLocation ? "Using start reference" : "Needs start reference")
+                            .font(isCondensed ? .caption2 : .caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer(minLength: 0)
+                }
             }
         }
     }
@@ -196,10 +202,11 @@ private struct SortRowAccessoryButton: View {
         Button(action: action) {
             AppIconGlyph(name: symbolName, size: isCondensed ? 10 : 12, weight: .bold)
                 .foregroundStyle(isEnabled ? .primary : .secondary)
-                .frame(width: isCondensed ? 24 : 28, height: isCondensed ? 24 : 28)
+                .frame(width: 44, height: 44)
                 .routeControlSurface(isActive: false, cornerRadius: isCondensed ? 12 : 14)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(symbolName == "arrow.up" ? "Move earlier" : (symbolName == "arrow.down" ? "Move later" : "Remove sort criterion"))
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1 : 0.5)
     }
