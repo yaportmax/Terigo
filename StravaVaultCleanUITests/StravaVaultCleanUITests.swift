@@ -117,9 +117,21 @@ final class StravaVaultCleanUITests: XCTestCase {
         tap(app.buttons["route-fullscreen-recenter"])
         RunLoop.current.run(until: Date().addingTimeInterval(3))
         capture("route-fullscreen-map", app)
-        XCTAssertTrue(waitUntil {
-            app.links.matching(identifier: "Legal").allElementsBoundByIndex.contains { $0.isHittable }
-        }, "Map attribution must remain reachable above the elevation panel")
+        // Inspect the presented map's system accessibility elements by label.
+        // Compare their displayed bounds to catch the original chart overlap directly.
+        let attribution = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", "Legal")).allElementsBoundByIndex.last
+        let chartHeading = app.staticTexts.matching(identifier: "Elevation Profile").allElementsBoundByIndex.last
+        let attributionIsVisible: Bool
+        if let attribution, let chartHeading {
+            attributionIsVisible = attribution.frame.height > 0
+                && app.frame.contains(attribution.frame)
+                && attribution.frame.maxY < chartHeading.frame.minY
+        } else {
+            attributionIsVisible = false
+        }
+        if !attributionIsVisible { capture("failure-map-attribution-layout", app) }
+        XCTAssertTrue(attributionIsVisible, "Map attribution must remain visible above the elevation panel")
         tap(app.buttons["Close full screen map"])
         tap(app.buttons["Done"])
         tapTab("Lists", app)
