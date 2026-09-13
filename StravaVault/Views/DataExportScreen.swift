@@ -138,13 +138,13 @@ struct DataExportScreen: View {
                         HStack(spacing: 12) {
                             Image(systemName: dataset.symbolName)
                                 .font(.system(size: 17, weight: .semibold))
-                                .foregroundStyle(selectedDataset == dataset ? Color.black : .white)
+                                .foregroundStyle(selectedDataset == dataset ? Color.black : .primary)
                                 .frame(width: 26, height: 26)
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(dataset.title)
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(selectedDataset == dataset ? Color.black : .white)
+                                    .foregroundStyle(selectedDataset == dataset ? Color.black : .primary)
 
                                 Text(dataset.subtitle)
                                     .font(.caption)
@@ -193,7 +193,7 @@ struct DataExportScreen: View {
                             Text(format.title)
                                 .font(.subheadline.weight(.semibold))
                         }
-                        .foregroundStyle(selectedFormat == format ? Color.black : .white)
+                        .foregroundStyle(selectedFormat == format ? Color.black : .primary)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
                         .background(

@@ -85,12 +85,12 @@ final class StravaVaultCleanUITests: XCTestCase {
         tap(app.buttons["route-tracking-battery-saver"])
         capture("tracking-continuous-gps", app)
         if app.buttons["route-tracking-continuous-gps-not-now"].exists {
-            tap(app.buttons["route-tracking-continuous-gps-not-now"])
+            tapAlertButton("route-tracking-continuous-gps-not-now", app)
         }
         tap(app.buttons["route-tracking-close"])
         if app.buttons["route-tracking-confirm-end"].waitForExistence(timeout: 3) {
             capture("tracking-end-confirmation", app)
-            tap(app.buttons["route-tracking-confirm-end"])
+            tapAlertButton("route-tracking-confirm-end", app)
             capture("tracking-finished", app)
             tap(app.buttons["route-tracking-close"])
         }
@@ -102,8 +102,10 @@ final class StravaVaultCleanUITests: XCTestCase {
         tapTab("Explore", app)
         tap(app.buttons["Fit routes on map"])
         tap(app.buttons["Open map full screen"])
+        // Give network-backed map tiles time to render for the visual record.
+        RunLoop.current.run(until: Date().addingTimeInterval(3))
         capture("explore-fullscreen", app)
-        tap(app.buttons["Close"])
+        tap(app.buttons["Close full screen map"])
         tap(app.buttons["Search for a place"])
         capture("explore-place-search", app)
     }
@@ -112,8 +114,9 @@ final class StravaVaultCleanUITests: XCTestCase {
         let app = launch()
         openRoute(app)
         tap(app.buttons["Open full screen map"])
-        capture("route-fullscreen-map", app)
         tap(app.buttons["route-fullscreen-recenter"])
+        RunLoop.current.run(until: Date().addingTimeInterval(3))
+        capture("route-fullscreen-map", app)
         tap(app.buttons["Close full screen map"])
         tap(app.buttons["Done"])
         tapTab("Lists", app)
@@ -220,6 +223,8 @@ final class StravaVaultCleanUITests: XCTestCase {
         scrollTo(app.staticTexts["route-weather-location"], app)
         capture("\(appearance)-06-route-weather", app)
         scrollTo(app.staticTexts["route-list-membership"], app)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.30)))
         capture("\(appearance)-07-route-organization", app)
         scrollTo(app.buttons["Open Start in Maps"], app)
         capture("\(appearance)-08-route-tools", app)
@@ -300,6 +305,16 @@ final class StravaVaultCleanUITests: XCTestCase {
         if !hittable { capture("failure-covered-control", XCUIApplication()) }
         XCTAssertTrue(hittable, "Control is covered or off screen: \(element)", file: file, line: line)
         element.tap()
+    }
+    private func tapAlertButton(_ identifier: String, _ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        // iOS 26 can expose a SwiftUI alert action as nested buttons with the same identifier.
+        let candidates = app.alerts.buttons.matching(identifier: identifier)
+        let ready = waitUntil(timeout: 10) {
+            candidates.allElementsBoundByIndex.contains { $0.isHittable }
+        }
+        if !ready { capture("failure-alert-control", app) }
+        XCTAssertTrue(ready, "Alert action is not reachable: \(identifier)", file: file, line: line)
+        candidates.allElementsBoundByIndex.first { $0.isHittable }?.tap()
     }
     private func scrollTo(_ element: XCUIElement, _ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         for _ in 0..<12 {

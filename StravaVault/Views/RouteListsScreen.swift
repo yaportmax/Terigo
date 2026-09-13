@@ -345,7 +345,8 @@ private struct RouteListDetailScreen: View {
                     updateDescription(to: updatedDescription)
                 }
             }
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
+            .presentationBackground(TerigoTheme.background)
         }
         .sheet(isPresented: $isShowingMapBrowse) {
             NavigationStack {
@@ -369,7 +370,8 @@ private struct RouteListDetailScreen: View {
             NavigationStack {
                 RouteListSharingSheet(list: list, routes: snapshot.routes)
             }
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.large])
+            .presentationBackground(TerigoTheme.background)
         }
         .alert(
             "Delete List?",

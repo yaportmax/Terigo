@@ -144,7 +144,7 @@ struct CompactMapToggleChip: View {
 
                 Text(title)
                     .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer(minLength: 0)
 
@@ -154,10 +154,11 @@ struct CompactMapToggleChip: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             .routeControlSurface(isActive: isOn, cornerRadius: 18)
         }
         .buttonStyle(.plain)
+        .accessibilityValue(isOn ? "On" : "Off")
     }
 }
 

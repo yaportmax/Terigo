@@ -467,24 +467,20 @@ struct RouteTrackingView: View {
     }
 
     private var trackingStatusMetric: (value: String, tint: Color) {
+        if session.phase == .finished { return ("Finished", .primary) }
+        if session.phase == .completed { return ("Complete", .primary) }
+        if session.phase == .paused { return ("Paused", .primary) }
         if session.phase == .awaitingPermission || session.permissionDenied || !hasFreshTrackingSignal || progress == nil {
-            return (
-                value: "No Signal",
-                tint: Color(red: 0.96, green: 0.71, blue: 0.24)
-            )
+            return ("No Signal", TerigoTheme.accent)
         }
-
         if progress?.isOffRoute == true {
-            return (
-                value: "Off Course",
-                tint: Color(red: 0.98, green: 0.52, blue: 0.43)
-            )
+            return ("Off Course", colorScheme == .dark
+                    ? Color(red: 0.98, green: 0.52, blue: 0.43)
+                    : Color(red: 0.70, green: 0.18, blue: 0.12))
         }
-
-        return (
-            value: "On Course",
-            tint: Color(red: 0.34, green: 0.86, blue: 0.64)
-        )
+        return ("On Course", colorScheme == .dark
+                ? Color(red: 0.34, green: 0.86, blue: 0.64)
+                : Color(red: 0.10, green: 0.38, blue: 0.26))
     }
 
     private func handleCloseTapped() {

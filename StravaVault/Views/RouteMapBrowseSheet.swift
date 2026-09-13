@@ -191,7 +191,7 @@ struct RouteMapBrowseSheet: View {
                 .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
 
                 CompactMapToggleChip(
-                    title: "Only routes in this area",
+                    title: "Map area only",
                     symbolName: "scope",
                     isOn: visibleAreaFilterBinding
                 )

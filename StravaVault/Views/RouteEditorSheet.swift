@@ -68,6 +68,7 @@ struct RouteEditorSheet: View {
     }
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(RouteLibraryModel.self) private var libraryModel
     @Environment(\.modelContext) private var modelContext
     @AppStorage(RouteTrackingActivityStore.activeRouteIDDefaultsKey) private var activeRouteTrackingRouteID = 0
@@ -146,6 +147,7 @@ struct RouteEditorSheet: View {
                     Button(action: startActivity) {
                         Label("Start Activity", systemImage: "play.fill")
                             .font(.headline)
+                            .foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
                             .frame(maxWidth: .infinity, minHeight: 44)
                     }
                     .buttonStyle(.borderedProminent)
@@ -229,7 +231,8 @@ struct RouteEditorSheet: View {
                         }
                     )
                 }
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
+                .presentationBackground(TerigoTheme.background)
                 .presentationDragIndicator(.visible)
             }
             .onAppear {
@@ -471,7 +474,7 @@ struct RouteEditorSheet: View {
                             apparentTemperatureText: RouteDisplayFormatter.weatherTemperature(snapshot.current.apparentTemperature),
                             observedTimeText: weatherTimeText(for: snapshot.current.observedAt, in: snapshot),
                             windText: RouteDisplayFormatter.weatherWindSpeed(snapshot.current.windSpeed),
-                            humidityText: snapshot.current.humidityPercent.map(RouteDisplayFormatter.percent)
+                            humidityText: snapshot.current.humidityPercent.map { RouteDisplayFormatter.percent($0 / 100) }
                         )
 
                         let forecastDays = weatherForecastDisplayDays(from: snapshot)
@@ -1646,7 +1649,6 @@ private struct RouteDetailMapCard: View {
                 Rectangle()
                     .fill(cardFillColor)
                     .frame(height: 7)
-                    .frame(maxHeight: .infinity, alignment: .top)
                     .allowsHitTesting(false)
 
                 HStack(spacing: 10) {
@@ -2615,10 +2617,13 @@ private struct RouteElevationReadout: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
             Text(value)
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -3478,59 +3483,64 @@ private struct RouteOfflineDownloadSheet: View {
                 )
             }
 
-            Section {
-                ForEach(AppRouteMapStyle.allCases) { mapStyle in
-                    RouteOfflineToggleRow(
-                        title: mapStyle.title,
-                        subtitle: mapStyle == .dark ? "Standard tiles with dark styling" : nil,
-                        isOn: Binding(
-                            get: { selection.normalizedMapStyles.contains(mapStyle) },
-                            set: { isSelected in
-                                var updated = selection.normalizedMapStyles
-                                if isSelected {
-                                    updated.append(mapStyle)
-                                    selection.includesGPX = true
-                                } else {
-                                    updated.removeAll { $0 == mapStyle }
-                                    if updated.isEmpty {
-                                        selection.includesTerrain = false
+            if RouteVaultMapboxConfiguration.isConfigured {
+                Section {
+                    ForEach(AppRouteMapStyle.allCases) { mapStyle in
+                        RouteOfflineToggleRow(
+                            title: mapStyle.title,
+                            subtitle: mapStyle == .dark ? "Standard tiles with dark styling" : nil,
+                            isOn: Binding(
+                                get: { selection.normalizedMapStyles.contains(mapStyle) },
+                                set: { isSelected in
+                                    var updated = selection.normalizedMapStyles
+                                    if isSelected {
+                                        updated.append(mapStyle)
+                                        selection.includesGPX = true
+                                    } else {
+                                        updated.removeAll { $0 == mapStyle }
+                                        if updated.isEmpty {
+                                            selection.includesTerrain = false
+                                        }
                                     }
+                                    selection.mapStyles = updated
                                 }
-                                selection.mapStyles = updated
+                            ),
+                            sizeText: byteCountText(Self.estimatedMapBytes(for: route, mapStyle: mapStyle)),
+                            statusText: offlineStatus.mapStyles.contains(mapStyle) ? "Saved" : "Not Saved",
+                            isDisabled: !RouteVaultMapboxConfiguration.isConfigured
+                        )
+                    }
+                } header: {
+                    Text("Map Styles")
+                }
+
+                Section("Extras") {
+                    RouteOfflineToggleRow(
+                        title: "3D Terrain",
+                        subtitle: "Offline terrain shading for 3D mode",
+                        isOn: Binding(
+                            get: { selection.includesTerrain },
+                            set: { newValue in
+                                selection.includesTerrain = newValue && !selection.normalizedMapStyles.isEmpty
                             }
                         ),
-                        sizeText: byteCountText(Self.estimatedMapBytes(for: route, mapStyle: mapStyle)),
-                        statusText: offlineStatus.mapStyles.contains(mapStyle) ? "Saved" : "Not Saved",
-                        isDisabled: !RouteVaultMapboxConfiguration.isConfigured
+                        sizeText: byteCountText(Self.estimatedTerrainBytes(for: route)),
+                        statusText: offlineStatus.includesTerrain ? "Saved" : "Not Saved",
+                        isDisabled: selection.normalizedMapStyles.isEmpty
                     )
                 }
-            } header: {
-                Text("Map Styles")
-            } footer: {
-                if !RouteVaultMapboxConfiguration.isConfigured {
-                    Text("Offline map downloads aren’t available in this build. You can still save the route as GPX.")
-                }
-            }
 
-            Section("Extras") {
-                RouteOfflineToggleRow(
-                    title: "3D Terrain",
-                    subtitle: "Offline terrain shading for 3D mode",
-                    isOn: Binding(
-                        get: { selection.includesTerrain },
-                        set: { newValue in
-                            selection.includesTerrain = newValue && !selection.normalizedMapStyles.isEmpty
-                        }
-                    ),
-                    sizeText: byteCountText(Self.estimatedTerrainBytes(for: route)),
-                    statusText: offlineStatus.includesTerrain ? "Saved" : "Not Saved",
-                    isDisabled: selection.normalizedMapStyles.isEmpty
-                )
+            } else {
+                Section("Offline navigation") {
+                    Text("Save the route and elevation profile as GPX. Apple Maps needs a connection to load new map areas.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section {
                 HStack {
-                    Text("Selected Download Size")
+                    Text("Estimated download")
                     Spacer()
                     Text(byteCountText(totalEstimatedBytes))
                         .foregroundStyle(.secondary)

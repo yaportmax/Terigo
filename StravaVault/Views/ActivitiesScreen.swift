@@ -1178,7 +1178,7 @@ private struct ActivitiesSummaryStrip: View {
         Text("\(RouteDisplayFormatter.compactCount(summary.activityCount)) activities · \(RouteDisplayFormatter.distance(summary.distanceMeters)) total")
             .font(.footnote.weight(.medium))
             .foregroundStyle(.secondary)
-            .lineLimit(1)
+            .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
